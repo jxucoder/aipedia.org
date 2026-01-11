@@ -1,0 +1,135 @@
+---
+title: "World of Bits"
+description: "Open-domain platform for web-based reinforcement learning agents"
+tags: ["reinforcement-learning", "web-agents", "benchmark", "multimodal"]
+---
+
+import { WorldOfBitsViz } from '../../components/viz/WorldOfBitsViz';
+
+**World of Bits (WoB)** is a platform introduced by Shi et al. (2017) where AI agents learn to complete tasks on the web by performing low-level keyboard and mouse actions—the same interface humans use.
+
+## Core Idea
+
+WoB treats the web as an open-domain reinforcement learning environment. At each timestep, an agent receives:
+
+- **Pixels** $\mathcal{I} \in \mathbb{R}^{W \times H \times 3}$ — rendered webpage screenshot
+- **DOM** $\mathcal{D}$ — Document Object Model with element coordinates
+- **Reward** $r$ — task completion signal
+
+The agent outputs mouse coordinates $(x, y)$ and keyboard actions to interact with the webpage.
+
+## Why the Web?
+
+Three key benefits make the web an ideal learning platform:
+
+| Benefit | Description |
+|---------|-------------|
+| **Open-domain** | Unlimited websites provide diverse tasks and real-world semantics |
+| **Open-source** | HTML/CSS/JS is inspectable and modifiable |
+| **Data collection** | Human demonstrations can be crowdsourced easily |
+
+Unlike robotics, web environments are fully digital—enabling fast iteration and massive scaling.
+
+## Interactive Demo
+
+Explore how a WoB agent perceives the DOM and takes actions to complete web tasks:
+
+<WorldOfBitsViz client:load />
+
+## Benchmark Tasks
+
+WoB introduces three task categories of increasing complexity:
+
+### MiniWoB
+
+100 hand-crafted web tasks with synthetic pages:
+
+- **click-button** — click a specific button
+- **enter-text** — type text into an input field
+- **use-slider** — adjust a slider to a target value
+- **book-flight** — complete a multi-step booking form
+
+These tasks feature clean reward functions and controlled complexity.
+
+### FormWoB
+
+Real flight booking websites (United, Alaska, etc.) packaged as reproducible environments:
+
+- Live HTTP traffic is cached via man-in-the-middle proxy
+- Enables offline training while approximating real web dynamics
+- Tests generalization to production websites
+
+### QAWoB
+
+Crowdsourced question-answering tasks on live websites:
+
+$$
+\text{Query} = \text{Template}(\text{slot}_1, \text{slot}_2, \ldots)
+$$
+
+Examples:
+- *"What is the population of **Paris**?"* (Wikipedia)
+- *"Find flights from **NYC** to **LA** on **Dec 25**"* (Flight sites)
+
+Workers provide demonstrations of how to answer queries using keyboard and mouse.
+
+## Agent Architecture
+
+The baseline WoB agent uses a CNN-LSTM architecture:
+
+```
+Observation → CNN(pixels) + MLP(DOM text) → LSTM → Policy(actions)
+```
+
+Key design choices:
+- **Multimodal input**: combines visual features with semantic DOM information
+- **Recurrent memory**: LSTM tracks state across multiple interaction steps
+- **Policy output**: coordinates $(x, y)$ for mouse, one-hot for keyboard
+
+## Training Approaches
+
+| Method | Description |
+|--------|-------------|
+| **Behavioral Cloning** | Supervised learning on human demonstrations |
+| **REINFORCE** | Policy gradient with sparse task rewards |
+| **Guided RL** | Warm-start with BC, then fine-tune with RL |
+
+Behavioral cloning alone achieves reasonable performance but struggles with recovery from errors. RL enables adaptation but requires reward shaping for complex tasks.
+
+## Performance Gap
+
+Even with demonstrations and RL, significant gaps remain:
+
+| Task Type | Agent Success | Human Success |
+|-----------|---------------|---------------|
+| Simple clicks | ~80% | 100% |
+| Multi-step forms | ~40% | 100% |
+| Open-domain QA | ~20% | 100% |
+
+This gap motivates continued research on web agents.
+
+## Impact & Legacy
+
+WoB pioneered the study of web-based agents and inspired subsequent benchmarks:
+
+- **MiniWoB++** — extended tasks with improved reward signals
+- **WebShop** — e-commerce navigation benchmark
+- **WebArena** — realistic web task environment
+- **Mind2Web** — large-scale web agent dataset
+
+Modern LLM-based agents (GPT-4V, Gemini) are now evaluated on these benchmarks.
+
+## Key Papers
+
+- **World of Bits** — Shi et al., 2017  
+  [ICML Paper](http://proceedings.mlr.press/v70/shi17a.html)
+
+- **Reinforcement Learning on Web Interfaces Using Workflow-Guided Exploration** — Liu et al., 2018  
+  [arXiv:1802.08802](https://arxiv.org/abs/1802.08802)
+
+- **WebGPT: Browser-assisted question-answering** — Nakano et al., 2021  
+  [arXiv:2112.09332](https://arxiv.org/abs/2112.09332)
+
+## Key Insight
+
+By using the web as an environment, WoB bridges the gap between simulated benchmarks and real-world tasks—agents learn from the same rich, semantic content that humans create and interact with daily.

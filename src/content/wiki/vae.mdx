@@ -1,0 +1,72 @@
+---
+title: "Variational Autoencoder (VAE)"
+description: "Probabilistic generative model with structured latent space"
+tags: ["deep-learning", "generative", "autoencoder", "latent-space"]
+---
+
+import { VAEViz } from '../../components/viz/VAEViz';
+
+A **Variational Autoencoder (VAE)** is a generative model that learns a *distribution* over latent variables, enabling smooth interpolation, sampling, and principled uncertainty.
+
+## Core Idea
+
+Instead of encoding an input x to a single latent vector, a VAE learns a posterior distribution:
+
+$$
+q_\phi(z|x) = \mathcal{N}(z; \mu(x), \sigma^2(x))
+$$
+
+Sampling from this distribution allows the model to generate diverse yet coherent outputs.
+
+## Evidence Lower Bound (ELBO)
+
+VAEs are trained by maximizing the **ELBO**:
+
+$$
+\mathcal{L}(x) = \mathbb{E}_{q(z|x)}[\log p_\theta(x|z)] - D_{KL}(q(z|x) \| p(z))
+$$
+
+- **Reconstruction term**: encourages accurate decoding of samples
+- **KL divergence**: regularizes the posterior toward the prior p(z) = N(0,I), shaping a smooth latent space
+
+This tradeoff balances fidelity and generalization.
+
+## Reparameterization Trick
+
+Directly sampling z from q(z|x) blocks gradients. The solution is to rewrite sampling as:
+
+$$
+z = \mu + \sigma \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, 1)
+$$
+
+Randomness is isolated in ε, allowing gradients to flow through μ and σ.
+
+## Interactive Visualization
+
+Explore how VAEs encode distributions, sample latents, interpolate, and decode:
+
+<VAEViz client:load />
+
+## VAE vs. Autoencoder
+
+| Autoencoder | Variational Autoencoder |
+|------------|------------------------|
+| Deterministic latent | Probabilistic latent |
+| No prior on z | Explicit prior p(z) |
+| Poor sampling | Smooth generation |
+| Optimizes reconstruction | Optimizes ELBO |
+
+## Extensions
+
+- **β-VAE** – stronger disentanglement via increased KL weight
+- **VQ-VAE** – discrete latent codes via vector quantization
+- **Conditional VAE** – generation conditioned on labels
+- **Hierarchical VAE** – multi-level latent variables
+
+## Key Papers
+
+- [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114) – Kingma & Welling (2013)
+- [β-VAE: Learning Basic Visual Concepts](https://arxiv.org/abs/1606.05579) – Higgins et al. (2017)
+- [Neural Discrete Representation Learning](https://arxiv.org/abs/1711.00937) – van den Oord et al. (2017)
+
+VAEs form the foundation of many modern generative models, including diffusion model latents and learned priors.

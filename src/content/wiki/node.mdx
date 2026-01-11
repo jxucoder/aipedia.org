@@ -1,0 +1,66 @@
+---
+title: "NODE (Neural Oblivious Decision Ensembles)"
+description: "Differentiable decision trees and oblivious ensembles for tabular learning"
+tags: ["deep-learning", "trees", "tabular-data", "differentiable"]
+---
+
+import { NodeTreeViz } from '../../components/viz/NodeTreeViz';
+
+**NODE** (Popov et al., 2019) introduces *differentiable decision trees* built from **oblivious trees**, enabling end-to-end gradient-based learning on tabular data.
+
+## Key Insight
+
+Hard splits like `if x < t` are replaced with soft routing:
+
+$$
+P(\text{left}) = \sigma\left(\frac{t - x}{\tau}\right)
+$$
+
+The temperature $\tau$ controls smoothness: low values approximate classic trees; higher values yield soft mixtures of paths.
+
+## Oblivious Decision Trees
+
+An **oblivious tree** uses the **same feature and threshold at every depth**. Each level applies an identical split, producing a symmetric structure.
+
+Benefits:
+
+- Fewer parameters
+- Efficient vectorization on GPUs
+- Strong inductive bias for tabular data
+
+NODE ensembles stack many such trees, each producing a weighted leaf prediction.
+
+## entmax vs softmax
+
+Instead of softmax, NODE can use **entmax**, which yields sparse probabilities:
+
+$$
+\mathrm{entmax}_\alpha(z) = \arg\max_p \; p^\top z + H_\alpha(p)
+$$
+
+For $\alpha = 1.5$, entmax interpolates between softmax (dense) and argmax (hard), improving interpretability and stability.
+
+## Interactive Visualization
+
+<NodeTreeViz client:load />
+
+## Why Differentiable Trees?
+
+- Train trees with **backpropagation**
+- Combine tree structure with neural representations
+- Smooth optimization landscape vs greedy splits
+- Naturally ensemble-friendly
+
+## Comparison to Other Tabular Models
+
+- **GBDT**: Strong but non-differentiable, trained greedily
+- **TabNet**: Attention-based, less interpretable splits
+- **MLPs**: Weak inductive bias for tabular data
+- **NODE**: Tree bias + gradient learning
+
+## Key Papers
+
+- *Neural Oblivious Decision Ensembles for Deep Learning on Tabular Data* — Popov et al. (2019)  
+  https://arxiv.org/abs/1909.06312
+- *Soft Decision Trees* — Frosst & Hinton (2017)
+- *Deep Neural Decision Trees* — Kontschieder et al. (2015)

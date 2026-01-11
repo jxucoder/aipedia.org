@@ -1,0 +1,74 @@
+---
+import Base from '../layouts/Base.astro';
+import Logo from '../components/Logo.astro';
+import { BrainViz } from '../components/viz/BrainViz';
+import { SearchBox } from '../components/SearchBox';
+import { getCollection } from 'astro:content';
+
+const pages = await getCollection('wiki');
+const pageData = pages.map(p => ({
+  slug: p.slug,
+  title: p.data.title,
+  description: p.data.description,
+  tags: p.data.tags
+}));
+---
+
+<Base title="Home">
+  <div class="relative min-h-[calc(100vh-3.5rem)] flex flex-col">
+    <!-- Background gradient -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px] animate-pulse-slow" />
+      <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] animate-pulse-slow" style="animation-delay: 1s;" />
+    </div>
+    
+    <!-- Hero content -->
+    <section class="relative z-10 text-center pt-8 md:pt-12 px-4">
+      <h1 class="mb-4">
+        <Logo size="xl" animated />
+      </h1>
+      <p class="text-xl md:text-2xl text-text-secondary max-w-2xl mx-auto font-light mb-8">
+        Open-source AI/ML knowledge base with interactive visualizations
+      </p>
+      <SearchBox client:load pages={pageData} />
+    </section>
+    
+    <!-- Brain visualization -->
+    <section class="flex-1 relative z-10 flex items-center justify-center px-4 -mt-8">
+      <div class="w-full max-w-3xl">
+        <BrainViz client:load pages={pageData} />
+      </div>
+    </section>
+    
+    <!-- CTA buttons -->
+    <section class="relative z-10 pb-12 px-4">
+      <div class="flex justify-center gap-4">
+        <a
+          href="/browse"
+          class="px-8 py-4 rounded-xl bg-accent text-white hover:bg-accent-hover transition-all font-semibold shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 hover:scale-105"
+        >
+          Browse Pages
+        </a>
+        <a
+          href="/tags"
+          class="px-8 py-4 rounded-xl border border-border hover:bg-bg-secondary/50 transition-all font-medium backdrop-blur-sm hover:scale-105"
+        >
+          View Tags
+        </a>
+      </div>
+      <p class="text-center text-text-secondary text-sm mt-6">
+        ↑ Interact with the neural map above • Click any concept to explore
+      </p>
+    </section>
+  </div>
+</Base>
+
+<style>
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+  }
+  .animate-pulse-slow {
+    animation: pulse-slow 6s ease-in-out infinite;
+  }
+</style>

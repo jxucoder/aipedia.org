@@ -1,0 +1,81 @@
+---
+title: "Gradient Boosted Decision Trees"
+description: "Sequential tree ensembles optimized via gradient descent"
+tags: ["machine-learning", "ensemble", "boosting", "trees"]
+---
+
+import { GBDTViz } from '../../components/viz/GBDTViz';
+
+**Gradient Boosted Decision Trees (GBDT)** are an ensemble method that builds decision trees sequentially, where each new tree is trained to correct the errors of the current ensemble.
+
+## Core Idea: Gradient Descent in Function Space
+
+GBDT performs **gradient descent over functions** rather than parameters. We iteratively improve a model $F(x)$ by adding a new function (tree) that points in the direction of steepest loss reduction.
+
+At iteration $m$:
+
+$$
+F_m(x) = F_{m-1}(x) + \eta \, h_m(x)
+$$
+
+- $h_m(x)$ is a regression tree
+- $\eta$ is the learning rate
+
+## Loss and Gradients
+
+For squared error loss:
+
+$$
+L(y, F(x)) = \frac{1}{2}(y - F(x))^2
+$$
+
+The negative gradient (residual) is:
+
+$$
+-\frac{\partial L}{\partial F(x)} = y - F(x)
+$$
+
+Each tree is trained to predict these residuals.
+
+## Interactive Visualization
+
+The demo below shows:
+- Data points and ensemble prediction curve
+- Residuals as vertical lines
+- Individual trees contributing to the final model
+- Loss decreasing as trees are added
+
+<GBDTViz client:load />
+
+## Key Hyperparameters
+
+- **learning_rate (η)** – step size for each tree; smaller values improve generalization
+- **n_estimators** – number of trees in the ensemble
+- **max_depth** – controls tree complexity and interaction order
+
+## GBDT vs Random Forest
+
+| Aspect | GBDT | Random Forest |
+|------|------|---------------|
+| Training | Sequential | Parallel |
+| Bias–Variance | Low bias | Low variance |
+| Optimization | Gradient-based | Bagging |
+| Overfitting | Controlled via learning rate | Controlled via averaging |
+
+## Popular Implementations
+
+- **XGBoost** – https://arxiv.org/abs/1603.02754
+- **LightGBM** – https://arxiv.org/abs/1706.02677
+- **CatBoost** – https://arxiv.org/abs/1706.09516
+
+Widely available in:
+- `xgboost`
+- `lightgbm`
+- `catboost`
+- `sklearn.ensemble.GradientBoosting*`
+
+## When to Use GBDT
+
+- Tabular data with mixed feature types
+- Medium-sized datasets
+- When strong performance and interpretability matter

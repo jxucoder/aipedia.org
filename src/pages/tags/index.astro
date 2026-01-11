@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const pages = await getCollection('wiki');
+const tagCounts = pages.reduce((acc, page) => {
+  page.data.tags.forEach(tag => {
+    acc[tag] = (acc[tag] || 0) + 1;
+  });
+  return acc;
+}, {} as Record<string, number>);
+
+const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+---
+
+<Base title="Tags">
+  <div class="max-w-4xl mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold mb-8">Tags</h1>
+    <div class="flex flex-wrap gap-3">
+      {sortedTags.map(([tag, count]) => (
+        <a
+          href={`/tags/${tag}`}
+          class="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:border-accent/50 hover:bg-bg-secondary transition-all"
+        >
+          <span class="group-hover:text-accent transition-colors">{tag}</span>
+          <span class="text-xs text-text-secondary bg-bg-secondary group-hover:bg-bg px-2 py-0.5 rounded-full">
+            {count}
+          </span>
+        </a>
+      ))}
+    </div>
+  </div>
+</Base>

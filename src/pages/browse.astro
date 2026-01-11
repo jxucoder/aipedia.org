@@ -1,0 +1,57 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const pages = await getCollection('wiki');
+const allTags = [...new Set(pages.flatMap(p => p.data.tags))].sort();
+---
+
+<Base title="Browse">
+  <div class="max-w-5xl mx-auto px-4 py-12">
+    <header class="mb-12">
+      <h1 class="text-4xl font-bold mb-4">Browse All Pages</h1>
+      <p class="text-text-secondary text-lg">
+        Explore {pages.length} articles across {allTags.length} topics
+      </p>
+    </header>
+    
+    <section class="mb-12">
+      <div class="flex flex-wrap gap-2 mb-8">
+        {allTags.map(tag => (
+          <a
+            href={`/tags/${tag}`}
+            class="px-3 py-1.5 text-sm rounded-full bg-bg-secondary hover:bg-accent/20 hover:text-accent transition-all border border-border/50"
+          >
+            {tag}
+          </a>
+        ))}
+      </div>
+    </section>
+    
+    <section>
+      <div class="grid gap-4 md:grid-cols-2">
+        {pages.map(page => (
+          <a
+            href={`/${page.slug}`}
+            class="group block p-6 rounded-2xl border border-border hover:border-accent/50 bg-bg-secondary/30 hover:bg-bg-secondary/60 transition-all hover:shadow-lg hover:shadow-accent/5"
+          >
+            <h2 class="text-xl font-semibold mb-2 group-hover:text-accent transition-colors">
+              {page.data.title}
+            </h2>
+            <p class="text-text-secondary text-sm mb-4 line-clamp-2">
+              {page.data.description}
+            </p>
+            <div class="flex flex-wrap gap-2">
+              {page.data.tags.map(tag => (
+                <span class="px-2 py-0.5 text-xs rounded-full bg-bg-secondary text-text-secondary border border-border/50">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>
+

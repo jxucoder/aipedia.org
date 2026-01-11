@@ -1,0 +1,47 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const pages = await getCollection('wiki');
+  const allTags = [...new Set(pages.flatMap(p => p.data.tags))];
+  
+  return allTags.map(tag => ({
+    params: { tag },
+    props: {
+      tag,
+      pages: pages.filter(p => p.data.tags.includes(tag)),
+    },
+  }));
+}
+
+const { tag, pages } = Astro.props;
+---
+
+<Base title={`Tag: ${tag}`}>
+  <div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="mb-8">
+      <a href="/tags" class="text-text-secondary hover:text-accent text-sm mb-2 inline-block">
+        ← All tags
+      </a>
+      <h1 class="text-4xl font-bold">
+        <span class="text-text-secondary">#</span>{tag}
+      </h1>
+      <p class="text-text-secondary mt-2">{pages.length} page{pages.length === 1 ? '' : 's'}</p>
+    </div>
+    
+    <div class="grid gap-4">
+      {pages.map(page => (
+        <a
+          href={`/${page.slug}`}
+          class="group block p-6 rounded-xl border border-border hover:border-accent/50 hover:bg-bg-secondary transition-all"
+        >
+          <h3 class="text-xl font-semibold mb-2 group-hover:text-accent transition-colors">
+            {page.data.title}
+          </h3>
+          <p class="text-text-secondary">{page.data.description}</p>
+        </a>
+      ))}
+    </div>
+  </div>
+</Base>

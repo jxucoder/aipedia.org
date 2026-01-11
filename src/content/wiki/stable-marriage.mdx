@@ -1,0 +1,71 @@
+---
+title: "Stable Marriage Problem"
+description: "Finding stable matchings via the Gale–Shapley algorithm"
+tags: ["algorithm", "matching", "game-theory", "optimization"]
+---
+
+import { StableMarriageViz } from '../../components/viz/StableMarriageViz';
+
+The **Stable Marriage Problem** asks how to match two equal-sized sets of agents (traditionally called men and women) given preference rankings, such that no unmatched pair would both prefer each other over their assigned partners.
+
+The classic solution is the **Gale–Shapley deferred acceptance algorithm**, which always produces a stable matching.
+
+## Interactive Demo
+
+<StableMarriageViz client:load />
+
+## Algorithm Explanation
+
+At a high level, the Gale–Shapley algorithm works as follows (assuming men propose):
+
+1. All participants start unmatched.
+2. Each unmatched man proposes to the most-preferred woman he has not yet proposed to.
+3. Each woman considers all received proposals and *tentatively* accepts the one she prefers most, rejecting the rest.
+4. Rejected men move on to their next preference.
+5. The process repeats until no unmatched man wishes to propose.
+
+Although acceptances are tentative, the algorithm is guaranteed to terminate with a **stable matching**.
+
+## Why the Result Is Stable
+
+A matching is **stable** if there is no *blocking pair*—a man and woman who both prefer each other over their current matches.
+
+Gale–Shapley prevents blocking pairs because:
+
+- Men propose in decreasing order of preference.
+- A woman only trades up when a better proposal arrives.
+- Once a woman rejects a man, she will never later prefer him.
+
+As a result, no mutually preferable deviation can exist at termination.
+
+## Time Complexity
+
+For *n* participants on each side:
+
+- Each man proposes to each woman at most once.
+- There are at most *n²* proposals.
+
+**Time complexity:** `O(n²)`  
+**Space complexity:** `O(n²)` (to store preferences)
+
+## Applications
+
+Stable matching algorithms are widely used in practice:
+
+- **Medical residency matching** (NRMP in the United States)
+- **College admissions** and school choice systems
+- **Job matching platforms** with ranked preferences
+- **Organ exchange programs**
+
+## Key Papers
+
+- Gale, D., & Shapley, L. S. (1962). *College Admissions and the Stability of Marriage*.  
+  https://www.jstor.org/stable/2312726
+- Roth, A. E. (1984). *The Evolution of the Labor Market for Medical Interns and Residents*.  
+  https://www.jstor.org/stable/1837229
+
+## Historical Note
+
+In **2012**, the **Nobel Prize in Economic Sciences** was awarded to **Lloyd Shapley** and **Alvin E. Roth** for their work on the theory and practice of stable allocations and market design.
+
+Their contributions turned the Stable Marriage Problem from a theoretical curiosity into a foundational tool for real-world market design.

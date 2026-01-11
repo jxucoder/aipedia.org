@@ -1,0 +1,61 @@
+---
+title: "Transformer"
+description: "Neural network architecture built on self-attention"
+tags: ["architecture", "attention", "deep-learning", "nlp"]
+---
+
+import { TransformerViz } from '../../components/viz/TransformerViz';
+
+The **Transformer** is a neural network architecture introduced in *Attention Is All You Need* by Vaswani et al. (2017). It replaces recurrence and convolution with **self-attention**, enabling parallel sequence processing and strong modeling of long-range dependencies.
+
+## Core Attention
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$
+
+- **Query (Q)**: what the current token is looking for
+- **Key (K)**: what each token offers
+- **Value (V)**: information carried by each token
+
+Each token attends to all others by comparing queries to keys, then combining values using the resulting attention weights.
+
+## Multi-Head Attention
+
+Instead of a single attention operation, Transformers use multiple heads:
+
+$$
+\text{MultiHead}(Q,K,V) = \text{Concat}(head_1,\dots,head_h)W^O
+$$
+
+where each head computes attention with different learned projections. This allows the model to capture different relational patterns simultaneously.
+
+## Positional Encoding
+
+Since attention is order-agnostic, positional encodings inject sequence order information:
+
+$$
+PE_{(pos,2i)} = \sin\left(\frac{pos}{10000^{2i/d}}\right), \quad
+PE_{(pos,2i+1)} = \cos\left(\frac{pos}{10000^{2i/d}}\right)
+$$
+
+These fixed encodings allow the model to reason about relative and absolute positions.
+
+## Interactive Demo
+
+Explore multi-head attention, token flow, and positional encodings below:
+
+<TransformerViz client:load />
+
+## Key Papers
+
+- **Attention Is All You Need** – Vaswani et al., 2017  \
+  https://arxiv.org/abs/1706.03762
+- **BERT: Pre-training of Deep Bidirectional Transformers** – Devlin et al., 2018  \
+  https://arxiv.org/abs/1810.04805
+- **GPT: Improving Language Understanding by Generative Pre-Training** – Radford et al., 2018  \
+  https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
+
+## Key Insight
+
+Self-attention lets every token interact with every other token in a single layer, making Transformers both expressive and highly parallelizable.
