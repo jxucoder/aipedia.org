@@ -7,20 +7,23 @@ const allTags = [...new Set(pages.flatMap(p => p.data.tags))].sort();
 ---
 
 <Base title="Browse">
-  <div class="max-w-5xl mx-auto px-4 py-12">
-    <header class="mb-12">
-      <h1 class="text-4xl font-bold mb-4">Browse All Pages</h1>
-      <p class="text-text-secondary text-lg">
-        Explore {pages.length} articles across {allTags.length} topics
+  <div class="max-w-2xl mx-auto px-4 py-12">
+    <header class="mb-10">
+      <h1 class="text-3xl font-semibold mb-3">Topics</h1>
+      <p class="text-text-secondary">
+        {pages.length} articles across {allTags.length} tags
       </p>
     </header>
     
     <section class="mb-12">
-      <div class="flex flex-wrap gap-2 mb-8">
+      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">
+        Tags
+      </h2>
+      <div class="flex flex-wrap gap-2">
         {allTags.map(tag => (
           <a
             href={`/tags/${tag}`}
-            class="px-3 py-1.5 text-sm rounded-full bg-bg-secondary hover:bg-accent/20 hover:text-accent transition-all border border-border/50"
+            class="px-3 py-1.5 text-sm rounded-lg bg-bg-secondary hover:bg-border transition-colors border border-border"
           >
             {tag}
           </a>
@@ -29,24 +32,20 @@ const allTags = [...new Set(pages.flatMap(p => p.data.tags))].sort();
     </section>
     
     <section>
-      <div class="grid gap-4 md:grid-cols-2">
+      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">
+        All Articles
+      </h2>
+      <div class="divide-y divide-border">
         {pages.map(page => (
           <a
             href={`/${page.slug}`}
-            class="group block p-6 rounded-2xl border border-border hover:border-accent/50 bg-bg-secondary/30 hover:bg-bg-secondary/60 transition-all hover:shadow-lg hover:shadow-accent/5"
+            class="group block py-4 hover:bg-bg-secondary/30 -mx-4 px-4 transition-colors"
           >
-            <h2 class="text-xl font-semibold mb-2 group-hover:text-accent transition-colors">
+            <div class="font-medium group-hover:underline mb-1">
               {page.data.title}
-            </h2>
-            <p class="text-text-secondary text-sm mb-4 line-clamp-2">
+            </div>
+            <div class="text-sm text-text-secondary">
               {page.data.description}
-            </p>
-            <div class="flex flex-wrap gap-2">
-              {page.data.tags.map(tag => (
-                <span class="px-2 py-0.5 text-xs rounded-full bg-bg-secondary text-text-secondary border border-border/50">
-                  {tag}
-                </span>
-              ))}
             </div>
           </a>
         ))}
@@ -54,4 +53,3 @@ const allTags = [...new Set(pages.flatMap(p => p.data.tags))].sort();
     </section>
   </div>
 </Base>
-

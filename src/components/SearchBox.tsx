@@ -56,7 +56,7 @@ export function SearchBox({ pages }: Props) {
   };
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-xl mx-auto">
+    <div ref={containerRef} className="relative w-full">
       <div className="relative">
         <svg
           className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary"
@@ -67,7 +67,7 @@ export function SearchBox({ pages }: Props) {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
+            strokeWidth={1.5}
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
@@ -81,8 +81,8 @@ export function SearchBox({ pages }: Props) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search concepts..."
-          className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-bg-secondary/80 backdrop-blur-sm border border-border focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none transition-all text-text placeholder:text-text-secondary"
+          placeholder="Search topics..."
+          className="w-full pl-12 pr-4 py-4 rounded-xl bg-bg-secondary border border-border focus:border-text-secondary outline-none transition-colors text-text placeholder:text-text-secondary"
         />
         {query && (
           <button
@@ -93,38 +93,37 @@ export function SearchBox({ pages }: Props) {
             className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         )}
       </div>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary/95 backdrop-blur-md border border-border rounded-xl shadow-2xl overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-border rounded-xl overflow-hidden z-50 shadow-lg">
           {results.map((page, index) => (
             <a
               key={page.slug}
               href={`/${page.slug}`}
-              className={`block px-4 py-3 transition-colors ${
+              className={`block px-4 py-3 transition-colors border-b border-border last:border-b-0 ${
                 index === selectedIndex
-                  ? 'bg-accent/20 text-accent'
-                  : 'hover:bg-bg-tertiary'
+                  ? 'bg-border/50'
+                  : 'hover:bg-border/30'
               }`}
               onMouseEnter={() => setSelectedIndex(index)}
             >
               <div className="font-medium">{page.title}</div>
-              <div className="text-sm text-text-secondary truncate">{page.description}</div>
+              <div className="text-sm text-text-secondary mt-0.5">{page.description}</div>
             </a>
           ))}
         </div>
       )}
 
       {isOpen && query && results.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary/95 backdrop-blur-md border border-border rounded-xl shadow-2xl p-4 text-center text-text-secondary z-50">
-          No results found for "{query}"
+        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-border rounded-xl p-4 text-center text-text-secondary z-50 shadow-lg">
+          No results for "{query}"
         </div>
       )}
     </div>
   );
 }
-
