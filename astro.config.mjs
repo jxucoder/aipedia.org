@@ -6,8 +6,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
 export default defineConfig({
-  site: 'https://jxucoder.github.io',
-  base: '/aipedia.org',
+  site: 'https://aipedia.org',
   integrations: [
     react(),
     tailwind({
