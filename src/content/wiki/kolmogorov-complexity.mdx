@@ -1,0 +1,113 @@
+---
+title: "Kolmogorov Complexity and Algorithmic Randomness"
+description: "The mathematical foundation for measuring information content and randomness"
+tags: ["complexity", "information-theory", "computation", "theory", "ilya-sutskever"]
+---
+
+import { KolmogorovViz } from '../../components/viz/KolmogorovViz';
+
+**Kolmogorov Complexity and Algorithmic Randomness** (by Shen, Uspensky, and Vereshchagin) is the definitive textbook on algorithmic information theory—the study of complexity, randomness, and information from a computational perspective.
+
+## Core Definition
+
+The **Kolmogorov complexity** $K(x)$ of a string $x$ is the length of the shortest program that outputs $x$:
+
+$$
+K(x) = \min \{|p| : U(p) = x\}
+$$
+
+where $U$ is a universal Turing machine and $|p|$ is the program length in bits.
+
+## Key Properties
+
+**Invariance Theorem**: Choice of universal machine only affects $K(x)$ by a constant:
+
+$$
+|K_U(x) - K_V(x)| \leq c_{UV}
+$$
+
+**Upper bound**: Every string has complexity at most its length:
+
+$$
+K(x) \leq |x| + O(1)
+$$
+
+**Incompressibility**: Most strings are incompressible:
+
+$$
+|\{x : |x| = n, K(x) < n - c\}| < 2^{n-c}
+$$
+
+## Interactive Demo
+
+Explore how different strings have different Kolmogorov complexities:
+
+<KolmogorovViz client:load />
+
+## Algorithmic Randomness
+
+A string is **algorithmically random** if it's incompressible:
+
+$$
+K(x) \geq |x| - O(1)
+$$
+
+Random strings have no exploitable patterns—they can't be compressed because any shorter description would be the pattern itself.
+
+## Conditional Complexity
+
+Given extra information $y$:
+
+$$
+K(x|y) = \min \{|p| : U(p, y) = x\}
+$$
+
+The mutual information between $x$ and $y$:
+
+$$
+I(x:y) = K(x) - K(x|y)
+$$
+
+## Uncomputability
+
+**Fundamental result**: $K(x)$ is uncomputable.
+
+No algorithm can determine the shortest program for every string. This connects to Gödel's incompleteness and the halting problem.
+
+## Applications to AI
+
+Kolmogorov complexity provides foundations for:
+
+- **Minimum Description Length** (MDL): Model selection by compression
+- **Solomonoff Induction**: Universal prior for prediction
+- **AIXI**: Theoretical optimal agent framework
+- **Occam's Razor**: Formalized as preferring low-$K$ hypotheses
+
+## The Chain Rule
+
+$$
+K(x, y) = K(x) + K(y|x) + O(\log K(x, y))
+$$
+
+Joint complexity equals one string plus the other given the first.
+
+## Sophistication vs Complexity
+
+**Kolmogorov complexity**: Total information in a string  
+**Sophistication**: Structure/pattern complexity (separating regularity from randomness)
+
+A random string has high complexity but low sophistication—it's complex only because it's random, not because it has intricate structure.
+
+## Why Ilya Included This
+
+This book provides the theoretical foundation for understanding:
+- Why simpler models generalize better (MDL principle)
+- The nature of learning and compression
+- Information-theoretic limits on prediction
+
+These concepts underpin much of modern machine learning theory.
+
+## Key Resource
+
+- **Kolmogorov Complexity and Algorithmic Randomness** — Shen, Uspensky, Vereshchagin  
+  https://www.lirmm.fr/~ashen/kolmbook-eng-scan.pdf

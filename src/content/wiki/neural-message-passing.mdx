@@ -1,0 +1,105 @@
+---
+title: "Neural Message Passing for Quantum Chemistry"
+description: "A unified framework for graph neural networks applied to molecular property prediction"
+tags: ["deep-learning", "gnn", "chemistry", "graphs", "ilya-sutskever"]
+---
+
+import { MessagePassingViz } from '../../components/viz/MessagePassingViz';
+
+**Neural Message Passing for Quantum Chemistry** introduced the Message Passing Neural Network (MPNN) framework, unifying various graph neural network architectures under a single formalism. It achieved state-of-the-art results on molecular property prediction.
+
+## The Problem
+
+Molecules are naturally graphs: atoms are nodes, bonds are edges. Predicting properties like energy or toxicity requires learning from this graph structure.
+
+## Message Passing Framework
+
+MPNNs operate in two phases:
+
+### 1. Message Passing Phase
+
+For $T$ timesteps, each node collects messages from neighbors:
+
+$$
+m_v^{t+1} = \sum_{u \in N(v)} M_t(h_v^t, h_u^t, e_{vu})
+$$
+
+Then updates its hidden state:
+
+$$
+h_v^{t+1} = U_t(h_v^t, m_v^{t+1})
+$$
+
+### 2. Readout Phase
+
+Aggregate node features into a graph-level prediction:
+
+$$
+\hat{y} = R(\{h_v^T | v \in G\})
+$$
+
+## Interactive Demo
+
+Watch messages flow through a molecular graph:
+
+<MessagePassingViz client:load />
+
+## Key Components
+
+| Component | Function | Common Choices |
+|-----------|----------|----------------|
+| **M** (Message) | Computes edge messages | MLP, attention |
+| **U** (Update) | Updates node states | GRU, LSTM |
+| **R** (Readout) | Graph-level output | Sum, attention |
+
+## Unifying Prior Work
+
+The MPNN framework encompasses:
+
+- **Convolutional Networks on Graphs** (Duvenaud et al.)
+- **Gated Graph Neural Networks** (Li et al.)
+- **Interaction Networks** (Battaglia et al.)
+- **Deep Tensor Neural Networks** (Schütt et al.)
+
+Each is an MPNN with specific $M$, $U$, and $R$ functions.
+
+## Virtual Graph Elements
+
+The paper introduced "virtual edges" connecting all atom pairs:
+
+$$
+e_{vu} = (d_{vu}, \text{bond type})
+$$
+
+where $d_{vu}$ is the 3D distance. This allows the network to reason about non-bonded interactions.
+
+## Results on QM9
+
+Predicting molecular properties on the QM9 dataset:
+
+| Property | Units | MPNN Error |
+|----------|-------|------------|
+| HOMO | eV | 0.043 |
+| LUMO | eV | 0.038 |
+| Gap | eV | 0.066 |
+| μ | Debye | 0.030 |
+
+MPNN achieved chemical accuracy on most targets.
+
+## Why This Matters
+
+1. **Unified framework**: Clarified the design space of graph neural networks
+2. **Practical impact**: Enabled ML-accelerated drug discovery
+3. **Architectural insight**: Showed that message passing is the key inductive bias
+
+## Legacy
+
+MPNNs became the foundation for:
+- **SchNet** — Continuous-filter convolutions
+- **DimeNet** — Directional message passing  
+- **Equivariant GNNs** — Respecting 3D symmetries
+
+## Key Paper
+
+- **Neural Message Passing for Quantum Chemistry** — Gilmer et al. (2017)  
+  https://arxiv.org/abs/1704.01212

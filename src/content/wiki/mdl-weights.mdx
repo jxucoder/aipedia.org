@@ -1,0 +1,98 @@
+---
+title: "Keeping Neural Networks Simple by Minimizing the Description Length of the Weights"
+description: "Hinton's MDL approach to neural network regularization through noisy weights"
+tags: ["deep-learning", "regularization", "mdl", "compression", "ilya-sutskever"]
+---
+
+import { MDLWeightsViz } from '../../components/viz/MDLWeightsViz';
+
+**Keeping Neural Networks Simple** by Hinton and van Camp introduced a principled approach to regularization: add noise to weights during training, effectively limiting the precision (and thus description length) of the learned parameters.
+
+## The MDL Principle
+
+The **Minimum Description Length** principle states that the best model minimizes:
+
+$$
+L(\text{model}) + L(\text{data} | \text{model})
+$$
+
+For neural networks:
+$$
+L(\text{weights}) + L(\text{errors} | \text{weights})
+$$
+
+## The Key Insight
+
+Instead of precise weights, transmit *noisy* weights:
+
+$$
+\tilde{w} = w + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2)
+$$
+
+Higher noise $\sigma$ means:
+- Fewer bits to describe weights (can use coarser precision)
+- More bits to describe prediction errors
+
+The network learns to find the optimal noise level.
+
+## Interactive Demo
+
+Explore the trade-off between weight precision and noise:
+
+<MDLWeightsViz client:load />
+
+## Mathematical Framework
+
+Weight distribution after adding noise:
+
+$$
+q(w) = \mathcal{N}(w; \mu, \sigma^2)
+$$
+
+The description length (in bits) for communicating weights:
+
+$$
+L(w) \approx -\log \frac{q(w)}{p(w)}
+$$
+
+where $p(w)$ is a prior (often $\mathcal{N}(0, 1)$).
+
+## The Bits-Back Argument
+
+A subtle insight: when transmitting weights with a known distribution, the receiver can "give back" some bits:
+
+$$
+\text{Effective bits} = H[q] - D_{KL}[q \| p]
+$$
+
+This is the same KL term that appears in VAEs!
+
+## Connection to Modern Regularization
+
+This 1993 paper anticipated:
+
+| MDL Concept | Modern Equivalent |
+|-------------|------------------|
+| Noisy weights | Dropout, weight noise |
+| Description length | KL divergence in VAEs |
+| Bits-back coding | Variational inference |
+| Optimal precision | Learned quantization |
+
+## Training Procedure
+
+1. Forward pass with noisy weights: $\tilde{w}_i = w_i + \mathcal{N}(0, \sigma_i^2)$
+2. Compute expected loss: $\mathbb{E}_\epsilon[\mathcal{L}(x, y; w + \epsilon)]$
+3. Update both $w$ and $\sigma$ via gradient descent
+4. Network learns which weights need precision
+
+## Why This Matters
+
+This paper established:
+- **Information-theoretic regularization**: Not just heuristics
+- **Learned precision**: Different weights need different precision
+- **Compression = generalization**: Simpler models generalize better
+
+## Key Paper
+
+- **Keeping Neural Networks Simple by Minimizing the Description Length of the Weights** — Hinton, van Camp (1993)  
+  https://www.cs.toronto.edu/~hinton/absps/colt93.pdf

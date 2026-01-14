@@ -1,0 +1,108 @@
+---
+title: "Machine Super Intelligence"
+description: "Shane Legg's PhD thesis formalizing universal intelligence and the AIXI agent"
+tags: ["agi", "theory", "intelligence", "aixi", "ilya-sutskever"]
+---
+
+import { AISuperIntelligenceViz } from '../../components/viz/AISuperIntelligenceViz';
+
+**Machine Super Intelligence** is Shane Legg's PhD thesis that provides a rigorous mathematical definition of intelligence and proves that the AIXI agent is optimally intelligent.
+
+## Defining Intelligence
+
+Legg proposes a formal definition:
+
+$$
+\Upsilon(\pi) = \sum_{\mu \in E} 2^{-K(\mu)} V_\mu^\pi
+$$
+
+where:
+- $\pi$ is an agent (policy)
+- $\mu$ is an environment
+- $K(\mu)$ is Kolmogorov complexity of $\mu$
+- $V_\mu^\pi$ is the expected reward of $\pi$ in $\mu$
+
+Intelligence is average performance across *all computable environments*, weighted by simplicity.
+
+## The AIXI Agent
+
+AIXI is the theoretically optimal agent:
+
+$$
+a^*_t = \arg\max_{a_t} \sum_{o_t r_t} \sum_{\mu \in E} 2^{-K(\mu)} \mu(o_t r_t | a_t h_{<t})
+$$
+
+At each step, AIXI:
+1. Considers all possible environments (weighted by complexity)
+2. Computes expected reward for each action
+3. Chooses the action maximizing expected future reward
+
+## Interactive Demo
+
+Explore the key concepts from the thesis:
+
+<AISuperIntelligenceViz client:load />
+
+## Solomonoff Induction
+
+The prediction component of AIXI uses Solomonoff's universal prior:
+
+$$
+P(x) = \sum_{p: U(p) = x*} 2^{-|p|}
+$$
+
+The probability of observing $x$ is the sum over all programs that output $x$, weighted by their brevity.
+
+## Key Results
+
+**Theorem (Optimality)**: AIXI is the most intelligent agent:
+
+$$
+\Upsilon(\text{AIXI}) \geq \Upsilon(\pi) \quad \forall \pi
+$$
+
+No other agent achieves higher expected performance across all environments.
+
+**Theorem (Incomputability)**: AIXI cannot be computed:
+
+The universal prior requires solving the halting problem. Real systems must approximate.
+
+## The Compression-Intelligence Connection
+
+A key insight: **compression and prediction are equivalent**.
+
+$$
+K(x_{1:n}) \approx -\log P(x_{1:n})
+$$
+
+A good predictor is a good compressor, and vice versa. This connects AIXI to practical language models.
+
+## Practical Approximations
+
+Real AI systems approximate AIXI through:
+- **Bounded computation**: Limited search depth
+- **Finite environments**: Specific domain knowledge
+- **Learned priors**: Neural networks instead of Solomonoff
+
+Modern LLMs can be viewed as crude AIXI approximations trained on text.
+
+## Why Ilya Included This
+
+This thesis provides:
+1. **Theoretical grounding**: Rigorous definition of intelligence
+2. **Ultimate benchmark**: AIXI as the theoretical ceiling
+3. **Design principles**: Compression, prediction, and universality
+
+Understanding the theoretical optimum illuminates what practical systems are approximating.
+
+## Implications
+
+- Intelligence *can* be formalized mathematically
+- Optimal intelligence requires universal prediction
+- Real AI must make tractability/optimality tradeoffs
+- Scaling leads toward AIXI-like behavior
+
+## Key Resource
+
+- **Machine Super Intelligence** — Shane Legg (PhD Thesis, 2008)  
+  https://www.vetta.org/documents/Machine_Super_Intelligence.pdf

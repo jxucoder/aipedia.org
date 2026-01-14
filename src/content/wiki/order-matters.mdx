@@ -1,0 +1,112 @@
+---
+title: "Order Matters: Sequence to Sequence for Sets"
+description: "How input and output ordering affects seq2seq learning on set-structured data"
+tags: ["deep-learning", "seq2seq", "sets", "attention", "ilya-sutskever"]
+---
+
+import { OrderMattersViz } from '../../components/viz/OrderMattersViz';
+
+**Order Matters: Sequence to Sequence for Sets** addresses a fundamental question: how should seq2seq models handle inputs or outputs that are inherently unordered sets?
+
+## The Problem
+
+Standard seq2seq models assume ordered sequences. But many tasks involve **sets**:
+
+- **Input sets**: Point clouds, object collections
+- **Output sets**: Predicted tags, detected objects
+- **Both**: Sorting (input set → output sequence)
+
+Naively treating sets as sequences introduces spurious ordering dependencies.
+
+## Input Order Sensitivity
+
+Experiment: Sort numbers using seq2seq.
+
+| Input Order | Output |
+|-------------|--------|
+| [3, 1, 4, 2] | [1, 2, 3, 4] ✓ |
+| [1, 2, 3, 4] | [1, 2, 3, 4] ✓ |
+| [4, 3, 2, 1] | [1, 2, 3, ?] ✗ |
+
+Different input orderings can lead to different (wrong) outputs!
+
+## Interactive Demo
+
+Explore how input order affects set processing:
+
+<OrderMattersViz client:load />
+
+## Solution: Read-Process-Write
+
+The paper proposes a three-phase architecture:
+
+### 1. Read
+
+Embed all input elements:
+$$
+\{e_1, e_2, ..., e_n\} = \text{Embed}(x_1, x_2, ..., x_n)
+$$
+
+### 2. Process
+
+Use attention to create order-invariant representation:
+$$
+q_t = \text{LSTM}(q_{t-1})
+$$
+$$
+\alpha_i = \text{softmax}(e_i \cdot q_t)
+$$
+$$
+r_t = \sum_i \alpha_i e_i
+$$
+
+Multiple processing steps refine the representation.
+
+### 3. Write
+
+Generate output sequence with pointer network:
+$$
+p(y_i | y_{<i}, M) = \text{Attention}(s_i, M)
+$$
+
+## Output Order Learning
+
+For tasks where output order matters but isn't predetermined:
+
+$$
+\mathcal{L} = \min_{\pi \in S_n} \sum_i -\log p(y_{\pi(i)} | y_{\pi(<i)})
+$$
+
+Search over permutations to find the easiest ordering to learn.
+
+## Key Results
+
+### Sorting
+
+| Model | Accuracy |
+|-------|----------|
+| Seq2seq | 72% |
+| Seq2seq + Attention | 87% |
+| **Read-Process-Write** | **94%** |
+
+### Convex Hull
+
+Sorting input points by angle dramatically improved performance—demonstrating that "natural" orderings help learning.
+
+## Implications
+
+1. **Order is a hyperparameter**: Choice of ordering affects learning
+2. **Attention enables invariance**: Self-attention over sets removes order dependence  
+3. **Output order matters**: Some orderings are easier to learn than others
+
+## Connection to Transformers
+
+The Read-Process-Write architecture anticipated:
+- **Set attention** (now standard in Transformers)
+- **Iterative refinement** (multiple attention layers)
+- **Permutation invariance** (via attention aggregation)
+
+## Key Paper
+
+- **Order Matters: Sequence to Sequence for Sets** — Vinyals, Bengio, Kudlur (2015)  
+  https://arxiv.org/abs/1511.06391

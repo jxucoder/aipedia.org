@@ -1,0 +1,94 @@
+---
+title: "GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism"
+description: "Training giant neural networks by pipelining micro-batches across devices"
+tags: ["deep-learning", "distributed", "training", "parallelism", "ilya-sutskever"]
+---
+
+import { GPipeViz } from '../../components/viz/GPipeViz';
+
+**GPipe** enables training of giant neural networks that don't fit on a single accelerator by partitioning the model across devices and pipelining micro-batches to maximize utilization.
+
+## The Problem
+
+Large models exceed single-device memory. Naive model parallelism (one layer per device) is inefficient:
+
+$$
+\text{Utilization} = \frac{1}{K}
+$$
+
+where $K$ is the number of devices. Most devices sit idle waiting for others.
+
+## The GPipe Solution
+
+1. **Partition** the model into $K$ consecutive stages across $K$ devices
+2. **Split** each mini-batch into $M$ micro-batches
+3. **Pipeline** micro-batches through the stages
+
+## Pipeline Schedule
+
+Forward passes flow left-to-right, backward passes right-to-left:
+
+$$
+\text{Time} = (K - 1) + M + (K - 1)
+$$
+
+The $(K-1)$ terms are "pipeline bubbles" at start and end.
+
+## Interactive Demo
+
+Watch micro-batches flow through a 4-device pipeline:
+
+<GPipeViz client:load />
+
+## Efficiency Analysis
+
+Bubble fraction (wasted time):
+
+$$
+\text{Bubble} = \frac{2(K-1)}{2(K-1) + 2M} = \frac{K-1}{K-1+M}
+$$
+
+With $M \gg K$, bubbles become negligible. GPipe recommends $M \geq 4K$.
+
+## Memory Optimization
+
+GPipe uses **activation recomputation** (gradient checkpointing):
+
+- Forward: Only store activations at partition boundaries
+- Backward: Recompute intermediate activations as needed
+
+This trades compute for memory, enabling larger models.
+
+## Synchronous Training
+
+Despite pipelining, GPipe maintains synchronous SGD semantics:
+
+$$
+\theta_{t+1} = \theta_t - \eta \cdot \frac{1}{M}\sum_{m=1}^{M} \nabla_\theta \mathcal{L}_m
+$$
+
+Gradients are accumulated across micro-batches before the update.
+
+## Results
+
+| Task | Model Size | Devices | Speedup |
+|------|-----------|---------|---------|
+| ImageNet | 557M params | 8 TPUs | 6.3× |
+| Translation | 6B params | 2048 TPUs | Near-linear |
+
+GPipe achieved 84.4% ImageNet accuracy with a 557M parameter AmoebaNet.
+
+## Comparison with Data Parallelism
+
+| Aspect | Data Parallel | GPipe |
+|--------|--------------|-------|
+| Memory per device | Full model | 1/K model |
+| Communication | Gradient sync | Activation transfer |
+| Batch size | Scales with K | Independent of K |
+
+GPipe is complementary—can combine both approaches.
+
+## Key Paper
+
+- **GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism** — Huang et al. (2019)  
+  https://arxiv.org/abs/1811.06965

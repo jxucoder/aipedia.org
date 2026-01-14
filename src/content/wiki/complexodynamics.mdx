@@ -1,0 +1,87 @@
+---
+title: "The First Law of Complexodynamics"
+description: "Why complexity rises then falls while entropy only increases"
+tags: ["complexity", "entropy", "theory", "physics", "ilya-sutskever"]
+---
+
+import { ComplexodynamicsViz } from '../../components/viz/ComplexodynamicsViz';
+
+**The First Law of Complexodynamics** is Scott Aaronson's exploration of why physical systems exhibit a characteristic pattern: complexity rises, peaks, then falls—even as entropy monotonically increases.
+
+## The Puzzle
+
+Entropy always increases (Second Law of Thermodynamics):
+
+$$
+S(t_2) \geq S(t_1) \quad \text{for } t_2 > t_1
+$$
+
+But complexity behaves differently. A freshly shuffled deck isn't complex—it's random. An ordered deck isn't complex—it's simple. Complexity peaks somewhere in between.
+
+## The Coffee Example
+
+Consider cream being poured into coffee:
+
+| Time | State | Entropy | Complexity |
+|------|-------|---------|------------|
+| t=0 | Separated layers | Low | Low |
+| t=mid | Swirling patterns | Medium | **High** |
+| t=∞ | Uniform mixture | High | Low |
+
+The intricate swirls are more "complex" than either extreme.
+
+## Defining Complexity
+
+Aaronson proposes **complextropy**: the length of the shortest efficient program that outputs a distribution from which the observed state appears random.
+
+For a string $x$:
+$$
+\text{Complextropy}(x) = \min_{S: x \in S} K(S)
+$$
+
+where $K(S)$ is the Kolmogorov complexity of set $S$, and $x$ looks random within $S$.
+
+## Interactive Demo
+
+Watch complexity rise and fall as a system evolves:
+
+<ComplexodynamicsViz client:load />
+
+## Why Complexity Peaks
+
+At $t=0$: Simple description ("all black on left, all white on right")
+
+At $t=\text{mid}$: Complex description (must specify intricate patterns)
+
+At $t=\infty$: Simple description ("random noise" or "uniform distribution")
+
+## The Sophistication Connection
+
+Kolmogorov's **sophistication** formalizes this:
+
+$$
+\text{Soph}(x) = \min \{K(S) : x \in S, K(x|S) \geq \log|S| - O(1)\}
+$$
+
+The sophistication of a string is the complexity of the simplest set containing it as a "typical" member.
+
+## Why Ilya Included This
+
+This essay connects:
+- **Information theory** (Kolmogorov complexity)
+- **Physics** (thermodynamics, entropy)
+- **Computation** (resource-bounded complexity)
+
+Understanding these connections provides intuition for why certain structures emerge in learning systems and why some patterns are "interesting."
+
+## Implications for AI
+
+Deep learning loss landscapes might follow similar dynamics:
+- Early training: Simple patterns (high loss, low complexity)
+- Mid training: Complex intermediate features
+- Late training: Simplified, generalizable representations
+
+## Key Resource
+
+- **The First Law of Complexodynamics** — Scott Aaronson  
+  https://scottaaronson.blog/?p=762

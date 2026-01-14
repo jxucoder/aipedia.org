@@ -1,0 +1,95 @@
+---
+title: "Quantifying the Rise and Fall of Complexity in Closed Systems"
+description: "The Coffee Automaton paper formalizing how complexity peaks then declines"
+tags: ["complexity", "entropy", "automata", "theory", "ilya-sutskever"]
+---
+
+import { CoffeeAutomatonViz } from '../../components/viz/CoffeeAutomatonViz';
+
+**The Coffee Automaton** paper by Aaronson et al. provides a formal model for the phenomenon described in "The First Law of Complexodynamics"—why complexity rises, peaks, and falls while entropy only increases.
+
+## The Model
+
+Consider a cellular automaton initialized in a "simple" state (like cream layered on coffee):
+
+$$
+\text{Initial: } \underbrace{1111...1111}_{n/2}\underbrace{0000...0000}_{n/2}
+$$
+
+As the system evolves, it passes through complex intermediate states before reaching equilibrium.
+
+## Measuring Complexity
+
+The paper uses **sophistication** as a complexity measure:
+
+$$
+\text{Soph}(x) = \min\{K(S) : x \in S, K(x|S) \geq \log|S| - O(1)\}
+$$
+
+This captures "meaningful" structure—random strings are complex (high $K$) but not sophisticated (no structure).
+
+## Interactive Demo
+
+Watch complexity rise and fall in a cellular automaton:
+
+<CoffeeAutomatonViz client:load />
+
+## The Main Theorem
+
+For a broad class of reversible cellular automata, there exist times $t_1$ and $t_2$ such that:
+
+$$
+\text{Soph}(x_{t_1}) \gg \text{Soph}(x_0)
+$$
+$$
+\text{Soph}(x_{t_2}) \ll \text{Soph}(x_{t_1})
+$$
+
+Complexity provably rises then falls.
+
+## The Three Phases
+
+| Phase | State | Entropy | Complexity |
+|-------|-------|---------|------------|
+| Initial | Ordered layers | Low | Low |
+| Mixing | Intricate patterns | Medium | **High** |
+| Equilibrium | Uniform random | High | Low |
+
+## Why This Happens
+
+**Initial state**: Described by a short program ("n/2 ones, n/2 zeros")
+
+**Mixing state**: Complex patterns require specifying many details
+
+**Final state**: Described as "sample from uniform distribution"
+
+The set of intermediate states is "special"—neither trivially ordered nor purely random.
+
+## Connection to Learning
+
+This dynamic appears in neural network training:
+
+1. **Early**: Random weights, simple predictions
+2. **Middle**: Complex feature detectors emerge
+3. **Late**: Simplified, generalizable representations
+
+Loss landscapes may follow similar complexity dynamics.
+
+## Compression Perspective
+
+$$
+K(x) = K(\text{structure}) + K(\text{noise}|\text{structure})
+$$
+
+At peak complexity:
+- Non-trivial structure to describe
+- Non-trivial variation around that structure
+
+At equilibrium:
+- Structure is "uniform distribution" (simple)
+- Everything else is noise
+
+## Key Paper
+
+- **Quantifying the Rise and Fall of Complexity in Closed Systems: The Coffee Automaton** — Aaronson, Carroll, Ouellette (2014)  
+  https://arxiv.org/abs/1405.6903

@@ -1,0 +1,107 @@
+---
+title: "A Tutorial Introduction to the Minimum Description Length Principle"
+description: "Grünwald's comprehensive guide to MDL for model selection and learning"
+tags: ["mdl", "information-theory", "model-selection", "theory", "ilya-sutskever"]
+---
+
+import { MDLTutorialViz } from '../../components/viz/MDLTutorialViz';
+
+**A Tutorial Introduction to the Minimum Description Length Principle** by Peter Grünwald is the definitive guide to MDL—a principled approach to model selection based on data compression.
+
+## The Core Idea
+
+The best model is the one that **compresses data most**:
+
+$$
+L_{\text{total}} = L(\text{model}) + L(\text{data}|\text{model})
+$$
+
+- $L(\text{model})$: Bits to describe the model itself
+- $L(\text{data}|\text{model})$: Bits to describe prediction errors
+
+Minimize the sum, not just the error.
+
+## Occam's Razor, Formalized
+
+MDL provides a mathematical justification for preferring simpler models:
+
+$$
+\text{Simple model} \Rightarrow \text{Low } L(\text{model})
+$$
+
+But simpler models may have higher errors. MDL finds the optimal trade-off.
+
+## Interactive Demo
+
+Compare models of varying complexity:
+
+<MDLTutorialViz client:load />
+
+## Two-Part Codes
+
+The simplest MDL approach:
+
+1. Encode the model using $L_1$ bits
+2. Encode the data given the model using $L_2$ bits
+3. Choose model minimizing $L_1 + L_2$
+
+This is "crude" MDL—refined versions exist.
+
+## Connection to Bayesian Inference
+
+MDL relates to the Bayesian posterior:
+
+$$
+\log P(\text{model}|\text{data}) = \log P(\text{data}|\text{model}) + \log P(\text{model}) - \log P(\text{data})
+$$
+
+Maximizing posterior ≈ minimizing description length.
+
+## Normalized Maximum Likelihood
+
+For refined MDL, use the **stochastic complexity**:
+
+$$
+\text{COMP}(x | \mathcal{M}) = \log \frac{P(x | \hat{\theta}(x), \mathcal{M})}{\sum_{x'} P(x' | \hat{\theta}(x'), \mathcal{M})}
+$$
+
+This accounts for model flexibility more carefully.
+
+## Key Applications
+
+| Domain | MDL Application |
+|--------|-----------------|
+| Model selection | Choose polynomial degree |
+| Change detection | Find breakpoints in time series |
+| Clustering | Determine number of clusters |
+| Feature selection | Which features to include |
+
+## MDL vs. Other Criteria
+
+| Criterion | Formula |
+|-----------|---------|
+| AIC | $-2\log L + 2k$ |
+| BIC | $-2\log L + k\log n$ |
+| MDL | $-\log L + \text{COMP}(\mathcal{M})$ |
+
+MDL is often equivalent to BIC but has stronger theoretical foundations.
+
+## Practical Insights
+
+1. **More complex ≠ Better**: Overfitting wastes bits on noise
+2. **Compression = Learning**: A good compressor is a good predictor
+3. **Prior knowledge**: Model encoding reflects assumptions
+
+## Why Ilya Included This
+
+MDL connects:
+- **Kolmogorov complexity** (theoretical)
+- **Statistical learning** (practical)
+- **Neural network regularization** (applied)
+
+Understanding MDL illuminates why techniques like dropout and weight decay work.
+
+## Key Resource
+
+- **A Tutorial Introduction to the Minimum Description Length Principle** — Grünwald (2005)  
+  https://arxiv.org/abs/math/0406077
