@@ -1,0 +1,74 @@
+---
+title: "Multi-Scale Context Aggregation by Dilated Convolutions"
+description: "Expanding receptive fields exponentially without losing resolution or adding parameters"
+tags: ["deep-learning", "cnn", "computer-vision", "segmentation", "ilya-sutskever"]
+---
+
+import { DilatedConvViz } from '../../components/viz/DilatedConvViz';
+
+**Dilated convolutions** (also called atrous convolutions) expand the receptive field exponentially without increasing the number of parameters or reducing spatial resolution. This paper introduced them for dense prediction tasks like semantic segmentation.
+
+## The Problem
+
+Standard convolutions face a tradeoff:
+- **Pooling** increases receptive field but loses spatial resolution
+- **Larger kernels** increase receptive field but add parameters quadratically
+
+For dense prediction (assigning a label to every pixel), we need both large context and high resolution.
+
+## Dilated Convolution
+
+A dilated convolution with dilation factor $d$ samples input at intervals:
+
+$$
+(F *_d k)(p) = \sum_{s+dt=p} F(s) \cdot k(t)
+$$
+
+A 3×3 kernel with dilation $d$ has a receptive field of $(2d+1) \times (2d+1)$ while using only 9 parameters.
+
+## Exponential Expansion
+
+By stacking layers with dilations $1, 2, 4, 8, ...$, the receptive field grows exponentially:
+
+| Layer | Dilation | Receptive Field |
+|-------|----------|-----------------|
+| 1 | 1 | 3×3 |
+| 2 | 2 | 7×7 |
+| 3 | 4 | 15×15 |
+| 4 | 8 | 31×31 |
+
+After $L$ layers: $(2^{L+1} - 1) \times (2^{L+1} - 1)$ receptive field.
+
+## Interactive Demo
+
+Visualize how different dilation rates expand the receptive field:
+
+<DilatedConvViz client:load />
+
+## Context Module
+
+The paper proposes a multi-scale context aggregation module:
+
+$$
+\text{Context}(x) = \sum_{i=1}^{n} \text{DilatedConv}_{d_i}(x)
+$$
+
+Multiple parallel dilated convolutions capture information at different scales, which are then combined for the final prediction.
+
+## Key Properties
+
+- **No resolution loss**: Unlike pooling, dilated convolutions maintain spatial dimensions
+- **Parameter efficient**: Same number of weights as standard convolution
+- **Flexible**: Dilation rate can be adjusted per layer or learned
+
+## Applications
+
+Dilated convolutions became foundational for:
+- **Semantic segmentation** (DeepLab, PSPNet)
+- **Audio generation** (WaveNet)
+- **Time series** (TCN - Temporal Convolutional Networks)
+
+## Key Paper
+
+- **Multi-Scale Context Aggregation by Dilated Convolutions** — Yu, Koltun (2015)  
+  https://arxiv.org/abs/1511.07122

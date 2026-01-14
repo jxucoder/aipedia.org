@@ -1,0 +1,62 @@
+---
+title: "AlexNet"
+description: "The deep CNN that won ImageNet 2012 and sparked the deep learning revolution"
+tags: ["deep-learning", "cnn", "computer-vision", "imagenet", "ilya-sutskever"]
+---
+
+import { AlexNetViz } from '../../components/viz/AlexNetViz';
+
+**AlexNet** is the deep convolutional neural network that won the 2012 ImageNet Large Scale Visual Recognition Challenge (ILSVRC), reducing the top-5 error rate from 26% to 15.3%. This landmark result demonstrated that deep learning could dramatically outperform traditional computer vision methods.
+
+## Architecture
+
+AlexNet consists of 8 learned layers: 5 convolutional and 3 fully-connected:
+
+$$
+\text{Input} \rightarrow \text{Conv}_1 \rightarrow \text{Conv}_2 \rightarrow \text{Conv}_3 \rightarrow \text{Conv}_4 \rightarrow \text{Conv}_5 \rightarrow \text{FC}_6 \rightarrow \text{FC}_7 \rightarrow \text{FC}_8
+$$
+
+The network processes 224×224 RGB images through progressively smaller spatial dimensions but increasing channel depth, culminating in a 1000-way softmax for ImageNet classification.
+
+## Key Innovations
+
+**ReLU Activation**: Instead of tanh or sigmoid, AlexNet used Rectified Linear Units:
+
+$$
+f(x) = \max(0, x)
+$$
+
+This non-saturating nonlinearity enabled 6× faster training compared to tanh networks.
+
+**Dropout**: During training, neurons are randomly zeroed with probability 0.5:
+
+$$
+\tilde{h} = h \cdot m, \quad m_i \sim \text{Bernoulli}(0.5)
+$$
+
+This prevents complex co-adaptations and reduces overfitting in the large fully-connected layers.
+
+**Local Response Normalization**: Inspired by lateral inhibition in biological neurons, LRN normalizes across adjacent feature maps at each spatial position.
+
+**Overlapping Pooling**: Using 3×3 pooling with stride 2 (overlapping) instead of non-overlapping pooling slightly reduced error rates.
+
+## Interactive Demo
+
+Explore AlexNet's layer-by-layer architecture and key innovations:
+
+<AlexNetViz client:load />
+
+## Historical Impact
+
+AlexNet's victory was decisive: the runner-up used hand-crafted features and achieved 26.2% error. This 10+ percentage point gap proved that:
+
+- Deep networks could learn hierarchical features automatically
+- GPUs were essential for training large models
+- Sufficient data (1.2M ImageNet images) enables generalization
+
+The paper has over 100,000 citations and is considered the catalyst of the modern deep learning era.
+
+## Key Paper
+
+- **ImageNet Classification with Deep Convolutional Neural Networks** — Krizhevsky, Sutskever, Hinton (2012)  
+  https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks

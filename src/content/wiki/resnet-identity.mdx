@@ -1,0 +1,74 @@
+---
+title: "Identity Mappings in Deep Residual Networks"
+description: "Pre-activation ResNet design that enables training of 1000+ layer networks"
+tags: ["deep-learning", "cnn", "computer-vision", "residual", "ilya-sutskever"]
+---
+
+import { IdentityMappingViz } from '../../components/viz/IdentityMappingViz';
+
+**Identity Mappings in Deep Residual Networks** is the follow-up paper to ResNet that analyzes skip connections more deeply and proposes an improved design—the **pre-activation ResNet**—which enables training networks with over 1000 layers.
+
+## The Problem with Original ResNet
+
+In the original ResNet, the residual block applies ReLU *after* the addition:
+
+$$
+h_{l+1} = \text{ReLU}(h_l + \mathcal{F}(h_l, W_l))
+$$
+
+This means the shortcut path is not a pure identity—it passes through a nonlinearity, which can impede gradient flow in very deep networks.
+
+## Pure Identity Shortcuts
+
+The key insight: for optimal gradient propagation, the shortcut should be a **clean identity mapping**:
+
+$$
+h_{l+1} = h_l + \mathcal{F}(h_l, W_l)
+$$
+
+By recursively applying this, any deep layer can directly access any shallow layer:
+
+$$
+h_L = h_l + \sum_{i=l}^{L-1} \mathcal{F}(h_i, W_i)
+$$
+
+## Pre-activation Design
+
+Moving BN and ReLU *before* the convolution (pre-activation) achieves pure identity shortcuts:
+
+$$
+y = x + \text{Conv}(\text{ReLU}(\text{BN}(x)))
+$$
+
+This subtle rearrangement has profound effects on gradient flow and enables training of 1001-layer networks.
+
+## Interactive Demo
+
+Compare the original post-activation design with the improved pre-activation version:
+
+<IdentityMappingViz client:load />
+
+## Why Pre-activation Works
+
+The gradient of the loss with respect to any layer $l$:
+
+$$
+\frac{\partial \mathcal{L}}{\partial h_l} = \frac{\partial \mathcal{L}}{\partial h_L} \left(1 + \frac{\partial}{\partial h_l}\sum_{i=l}^{L-1}\mathcal{F}_i\right)
+$$
+
+The "1" term provides a direct gradient highway from $h_L$ to $h_l$, unimpeded by nonlinearities.
+
+## Results
+
+| Architecture | CIFAR-10 Error | CIFAR-100 Error |
+|-------------|----------------|-----------------|
+| ResNet-110 (original) | 6.61% | - |
+| ResNet-110 (pre-act) | 6.37% | - |
+| ResNet-1001 (pre-act) | 4.92% | 22.71% |
+
+Pre-activation enables training of networks 10× deeper with better performance.
+
+## Key Paper
+
+- **Identity Mappings in Deep Residual Networks** — He, Zhang, Ren, Sun (2016)  
+  https://arxiv.org/abs/1603.05027

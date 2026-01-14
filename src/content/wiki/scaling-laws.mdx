@@ -1,0 +1,97 @@
+---
+title: "Scaling Laws for Neural Language Models"
+description: "Empirical laws governing how language model performance scales with compute, data, and parameters"
+tags: ["deep-learning", "nlp", "scaling", "transformers", "ilya-sutskever"]
+---
+
+import { ScalingLawsViz } from '../../components/viz/ScalingLawsViz';
+
+**Scaling Laws for Neural Language Models** discovered that language model performance follows remarkably smooth power laws across many orders of magnitude. This paper provided the theoretical foundation for training ever-larger models.
+
+## The Core Discovery
+
+Cross-entropy loss $L$ follows power laws in:
+
+$$
+L(N) = \left(\frac{N_c}{N}\right)^{\alpha_N}, \quad \alpha_N \approx 0.076
+$$
+
+$$
+L(D) = \left(\frac{D_c}{D}\right)^{\alpha_D}, \quad \alpha_D \approx 0.095  
+$$
+
+$$
+L(C) = \left(\frac{C_c}{C}\right)^{\alpha_C}, \quad \alpha_C \approx 0.050
+$$
+
+where $N$ = parameters, $D$ = dataset size, $C$ = compute.
+
+## The Unified Law
+
+When optimally allocating a compute budget $C$:
+
+$$
+L(C) = \left(\frac{C_c}{C}\right)^{\alpha_C}
+$$
+
+This means: **double your compute, get predictable improvement**.
+
+## Interactive Visualization
+
+Explore how loss decreases with scale:
+
+<ScalingLawsViz client:load />
+
+## Optimal Allocation
+
+Given compute budget $C$, how to split between model size and training data?
+
+$$
+N^* \propto C^{0.73}
+$$
+$$
+D^* \propto C^{0.27}
+$$
+
+**Key insight**: Larger models are more sample-efficient. As compute grows, invest mostly in parameters.
+
+## What Doesn't Matter (Much)
+
+The paper found these have minimal impact on scaling:
+- Model shape (depth vs width)
+- Learning rate schedule details
+- Batch size (within reason)
+- Context length (once sufficient)
+
+The power law exponents remain remarkably constant.
+
+## Practical Implications
+
+| Compute Budget | Optimal Parameters | Tokens |
+|---------------|-------------------|--------|
+| 10^18 FLOPs | ~100M | ~2B |
+| 10^21 FLOPs | ~1B | ~20B |
+| 10^24 FLOPs | ~10B | ~200B |
+
+## Why This Matters
+
+Before this paper, scaling was empirical guesswork. After:
+
+1. **Predictability**: Know performance before training
+2. **Investment justification**: Larger compute → guaranteed gains
+3. **Research direction**: Showed the path to GPT-3 and beyond
+
+## The Chinchilla Update
+
+Note: Hoffmann et al. (2022) later showed the original laws underestimated optimal data. "Chinchilla scaling" suggests:
+
+$$
+N^* \propto C^{0.5}, \quad D^* \propto C^{0.5}
+$$
+
+Equal investment in parameters and data may be better.
+
+## Key Paper
+
+- **Scaling Laws for Neural Language Models** — Kaplan et al. (2020)  
+  https://arxiv.org/abs/2001.08361

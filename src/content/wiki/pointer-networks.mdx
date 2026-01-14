@@ -1,0 +1,100 @@
+---
+title: "Pointer Networks"
+description: "Neural architecture that outputs pointers to input positions, enabling variable-size outputs"
+tags: ["deep-learning", "attention", "seq2seq", "combinatorial", "ilya-sutskever"]
+---
+
+import { PointerNetViz } from '../../components/viz/PointerNetViz';
+
+**Pointer Networks** solve a fundamental limitation of sequence-to-sequence models: they can only output from a fixed vocabulary. Pointer Networks instead output *pointers* to input positions, enabling tasks where output size depends on input.
+
+## The Problem
+
+Standard seq2seq models produce outputs from a fixed dictionary:
+
+$$
+P(y_i | y_1, ..., y_{i-1}, x) = \text{softmax}(W \cdot h_i)
+$$
+
+But what if the output should reference input positions? For convex hull, the output is indices into the input—vocabulary size equals input size.
+
+## The Pointer Mechanism
+
+Instead of projecting to a fixed vocabulary, use **attention over inputs as the output**:
+
+$$
+u_j^i = v^T \tanh(W_1 e_j + W_2 d_i)
+$$
+
+$$
+P(y_i | y_1, ..., y_{i-1}, x) = \text{softmax}(u^i)
+$$
+
+The attention weights $\alpha_{ij}$ directly become the output probability over input positions.
+
+## Architecture
+
+1. **Encoder**: Process input sequence $(x_1, ..., x_n)$ to get representations $(e_1, ..., e_n)$
+2. **Decoder**: At each step, produce hidden state $d_i$
+3. **Pointer**: Compute attention over encoder states, output highest-attention position
+
+## Interactive Demo
+
+Watch a Pointer Network solve convex hull by pointing to input coordinates:
+
+<PointerNetViz client:load />
+
+## Applications
+
+### Convex Hull
+
+Given points, output the subset forming the convex hull. Output size varies with input geometry.
+
+### Delaunay Triangulation
+
+Given points, output triangles. Number of triangles depends on point configuration.
+
+### Traveling Salesman Problem
+
+Approximate TSP by learning to output city visitation order.
+
+### Sorting
+
+Learn to sort sequences by outputting indices in sorted order.
+
+## Why Pointers Matter
+
+| Standard Seq2Seq | Pointer Network |
+|-----------------|-----------------|
+| Fixed vocabulary | Input-dependent vocabulary |
+| Can't reference input | Output references input |
+| Fixed output size | Variable output size |
+
+## Key Equations
+
+Encoder (bidirectional LSTM):
+$$
+e_j = [\overrightarrow{h}_j; \overleftarrow{h}_j]
+$$
+
+Decoder with attention:
+$$
+d_i = \text{LSTM}(d_{i-1}, [y_{i-1}; c_{i-1}])
+$$
+
+Pointer distribution:
+$$
+P(y_i = j) = \frac{\exp(u_j^i)}{\sum_k \exp(u_k^i)}
+$$
+
+## Influence
+
+Pointer Networks introduced the idea of using attention as output, which influenced:
+- **Copy mechanisms** in text generation
+- **Pointer-generator networks** for summarization
+- **Graph neural network outputs**
+
+## Key Paper
+
+- **Pointer Networks** — Vinyals, Fortunato, Jaitly (2015)  
+  https://arxiv.org/abs/1506.03134

@@ -1,0 +1,91 @@
+---
+title: "The Unreasonable Effectiveness of Recurrent Neural Networks"
+description: "Andrej Karpathy's influential blog post demonstrating RNN capabilities through character-level generation"
+tags: ["deep-learning", "rnn", "nlp", "generative", "ilya-sutskever"]
+---
+
+import { RNNGeneratorViz } from '../../components/viz/RNNGeneratorViz';
+
+**The Unreasonable Effectiveness of Recurrent Neural Networks** is Andrej Karpathy's 2015 blog post that captivated the AI community by showing what simple RNNs could learn from raw text.
+
+## The Core Idea
+
+Train an RNN to predict the next character given all previous characters:
+
+$$
+P(x_{t+1} | x_1, x_2, ..., x_t)
+$$
+
+That's it. No parsing, no grammar rules, no structure—just characters. Yet the results are remarkable.
+
+## Character-Level Language Model
+
+At each timestep, the RNN:
+1. Takes a character as input
+2. Updates its hidden state: $h_t = \tanh(W_{hh}h_{t-1} + W_{xh}x_t)$
+3. Outputs a probability distribution over all characters: $P(x_{t+1}) = \text{softmax}(W_{hy}h_t)$
+
+During generation, sample from this distribution and feed it back as the next input.
+
+## Interactive Demo
+
+Watch an RNN generate text character by character:
+
+<RNNGeneratorViz client:load />
+
+## What RNNs Learn
+
+Karpathy trained char-RNNs on various datasets and found they learned:
+
+**Shakespeare**
+- Spelling, punctuation, line structure
+- Character names, stage directions
+- Iambic pentameter patterns
+
+**Wikipedia**
+- XML/HTML markup structure
+- Balanced brackets and tags
+- Link syntax
+
+**Linux Source Code**
+- C syntax (brackets, semicolons)
+- Indentation conventions
+- Function/variable naming patterns
+
+**LaTeX**
+- Mathematical notation
+- Environment matching (begin/end)
+- Citation formats
+
+## Temperature Sampling
+
+The **temperature** parameter controls randomness:
+
+$$
+P(x_i) = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}
+$$
+
+- **T → 0**: Greedy, picks highest probability (repetitive)
+- **T = 1**: Standard sampling
+- **T > 1**: More random, creative but potentially incoherent
+
+## Hidden State Visualization
+
+Karpathy discovered individual neurons tracking specific features:
+- One neuron activates inside quotes
+- Another tracks line length
+- Some detect URLs or code comments
+
+## Why This Matters
+
+This post demonstrated that:
+1. Simple models can capture complex structure
+2. Raw prediction objective learns rich representations
+3. Neural networks discover interpretable features
+
+These insights presaged the success of GPT and modern language models.
+
+## Key Resource
+
+- **Blog Post**: https://karpathy.github.io/2015/05/21/rnn-effectiveness/
+- **char-rnn Code**: https://github.com/karpathy/char-rnn

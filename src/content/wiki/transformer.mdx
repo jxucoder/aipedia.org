@@ -1,7 +1,7 @@
 ---
-title: "Transformer"
-description: "Neural network architecture built on self-attention"
-tags: ["architecture", "attention", "deep-learning", "nlp"]
+title: "Attention Is All You Need"
+description: "The Transformer architecture that replaced recurrence with self-attention"
+tags: ["architecture", "attention", "deep-learning", "nlp", "ilya-sutskever"]
 ---
 
 import { TransformerViz } from '../../components/viz/TransformerViz';
@@ -56,6 +56,34 @@ Explore multi-head attention, token flow, and positional encodings below:
 - **GPT: Improving Language Understanding by Generative Pre-Training** – Radford et al., 2018  \
   https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
 
+## The Architecture
+
+The full Transformer consists of:
+
+**Encoder**: N layers of (Self-Attention → Add & Norm → FFN → Add & Norm)  
+**Decoder**: N layers of (Masked Self-Attention → Cross-Attention → FFN), each with Add & Norm
+
+The original paper used N=6 layers, d_model=512, and 8 attention heads.
+
+## Why No Recurrence?
+
+RNNs process sequentially: position $t$ must wait for $t-1$. Self-attention computes all positions in parallel:
+
+| Property | RNN | Transformer |
+|----------|-----|-------------|
+| Sequential ops | O(n) | O(1) |
+| Max path length | O(n) | O(1) |
+| Parallelizable | No | Yes |
+
 ## Key Insight
 
 Self-attention lets every token interact with every other token in a single layer, making Transformers both expressive and highly parallelizable.
+
+## Historical Impact
+
+"Attention Is All You Need" is one of the most cited AI papers. The Transformer architecture underlies:
+- **GPT series** (decoder-only)
+- **BERT** (encoder-only)
+- **T5, BART** (encoder-decoder)
+- **Vision Transformers** (ViT)
+- **Modern LLMs** (GPT-4, Claude, etc.)

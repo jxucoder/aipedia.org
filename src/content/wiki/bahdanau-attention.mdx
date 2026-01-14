@@ -1,0 +1,89 @@
+---
+title: "Neural Machine Translation by Jointly Learning to Align and Translate"
+description: "The paper that introduced the attention mechanism for sequence-to-sequence models"
+tags: ["deep-learning", "attention", "nlp", "translation", "ilya-sutskever"]
+---
+
+import { AttentionAlignmentViz } from '../../components/viz/AttentionAlignmentViz';
+
+This landmark paper introduced the **attention mechanism** for neural machine translation, solving the bottleneck problem of fixed-size encoder representations. It's one of the most influential papers in modern AI.
+
+## The Bottleneck Problem
+
+In standard seq2seq models, the encoder compresses the entire input into a fixed-size context vector $c$:
+
+$$
+c = f(x_1, x_2, ..., x_T)
+$$
+
+This becomes a bottleneck for long sequences—all information must squeeze through a single vector.
+
+## The Attention Solution
+
+Instead of a single context vector, attention computes a **different context for each output step**:
+
+$$
+c_i = \sum_{j=1}^{T} \alpha_{ij} h_j
+$$
+
+where $\alpha_{ij}$ is the attention weight that output position $i$ places on input position $j$.
+
+## Computing Attention Weights
+
+The attention weights are computed by an alignment model:
+
+$$
+e_{ij} = a(s_{i-1}, h_j)
+$$
+
+$$
+\alpha_{ij} = \frac{\exp(e_{ij})}{\sum_{k=1}^{T} \exp(e_{ik})}
+$$
+
+The alignment function $a$ (often a small neural network) scores how well input $j$ and output $i$ match.
+
+## Interactive Demo
+
+Watch attention align source and target words during translation:
+
+<AttentionAlignmentViz client:load />
+
+## The Alignment Model
+
+Bahdanau attention uses an additive alignment function:
+
+$$
+e_{ij} = v^T \tanh(W_s s_{i-1} + W_h h_j)
+$$
+
+This learnable function discovers which source words are relevant for generating each target word.
+
+## Why This Changed Everything
+
+1. **No bottleneck**: Each output step accesses all encoder states
+2. **Interpretable**: Attention weights show what the model "looks at"
+3. **Handles long sequences**: Performance doesn't degrade with length
+4. **Generalizable**: The mechanism applies far beyond translation
+
+## Results
+
+| Model | BLEU Score |
+|-------|------------|
+| RNNsearch (no attention) | 26.75 |
+| RNNsearch-50 (attention) | **28.45** |
+| Phrase-based SMT | 33.30 |
+
+Attention closed the gap with statistical MT and enabled future improvements.
+
+## Legacy
+
+This paper's attention mechanism became:
+- The foundation of **Transformers** (self-attention)
+- Used in **image captioning** (visual attention)
+- Core to **speech recognition** (CTC-attention)
+- Essential for **modern LLMs**
+
+## Key Paper
+
+- **Neural Machine Translation by Jointly Learning to Align and Translate** — Bahdanau, Cho, Bengio (2014)  
+  https://arxiv.org/abs/1409.0473

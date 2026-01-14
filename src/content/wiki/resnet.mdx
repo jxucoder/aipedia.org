@@ -1,0 +1,81 @@
+---
+title: "ResNet"
+description: "Deep residual learning with skip connections that enabled training of 152+ layer networks"
+tags: ["deep-learning", "cnn", "computer-vision", "residual", "ilya-sutskever"]
+---
+
+import { ResNetViz } from '../../components/viz/ResNetViz';
+
+**ResNet** (Residual Network) introduced skip connections that revolutionized deep learning by enabling the training of networks with over 150 layers. It won the 2015 ImageNet challenge with a 3.57% error rate—surpassing human-level performance.
+
+## The Degradation Problem
+
+Before ResNet, adding more layers to a network eventually *degraded* performance:
+
+$$
+\text{Error}_{56\text{-layer}} > \text{Error}_{20\text{-layer}}
+$$
+
+This wasn't overfitting—training error also increased. Deeper networks were fundamentally harder to optimize.
+
+## Residual Learning
+
+Instead of learning a desired mapping $H(x)$ directly, ResNet learns the **residual**:
+
+$$
+F(x) = H(x) - x
+$$
+
+The output becomes:
+
+$$
+y = F(x) + x
+$$
+
+The key insight: if identity is optimal, it's easier to push $F(x) \rightarrow 0$ than to learn $H(x) = x$.
+
+## Skip Connections
+
+The identity shortcut $x$ bypasses layers and is added to the output:
+
+$$
+y = \mathcal{F}(x, \{W_i\}) + x
+$$
+
+These shortcuts:
+- Add no extra parameters
+- Enable gradient flow through hundreds of layers
+- Allow each block to refine features rather than transform them completely
+
+## Block Architectures
+
+**Basic Block** (ResNet-18/34): Two 3×3 convolutions
+**Bottleneck Block** (ResNet-50/101/152): 1×1 → 3×3 → 1×1 convolutions for efficiency
+
+## Interactive Demo
+
+Explore residual blocks and toggle skip connections to see their effect:
+
+<ResNetViz client:load />
+
+## Why It Works
+
+Skip connections create **gradient highways**:
+
+$$
+\frac{\partial \mathcal{L}}{\partial x} = \frac{\partial \mathcal{L}}{\partial y} \cdot \left(1 + \frac{\partial F}{\partial x}\right)
+$$
+
+The "1" term ensures gradients flow directly backward, preventing vanishing gradients even in very deep networks.
+
+## Impact
+
+ResNet's influence extends far beyond image classification:
+- Foundation for most modern vision architectures
+- Inspired connections in Transformers (residual attention)
+- Enabled training of networks with 1000+ layers
+
+## Key Paper
+
+- **Deep Residual Learning for Image Recognition** — He, Zhang, Ren, Sun (2015)  
+  https://arxiv.org/abs/1512.03385

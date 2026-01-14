@@ -1,0 +1,40 @@
+---
+title: "Pre-training"
+description: "The initial phase of training foundation models on vast amounts of data"
+tags: ["deep-learning", "training", "foundation-models", "sota"]
+---
+
+**Pre-training** is the first and most computationally intensive stage in the development of modern foundation models. During this phase, a model is trained on a massive dataset (often terabytes of text, code, or images) to learn general-purpose patterns, representations, and world knowledge.
+
+The resulting "pre-trained" model serves as a base that can be further adapted (via **fine-tuning**) for specific downstream tasks.
+
+## Core Concepts
+
+### Self-Supervised Learning
+Most modern pre-training relies on **self-supervised learning**, where the training labels are derived directly from the data itself. Common objectives include:
+
+- **Causal Language Modeling (CLM)**: Predicting the next token in a sequence (e.g., GPT style).
+  $$ P(x) = \prod_{i=1}^n P(x_i | x_{<i}) $$
+- **Masked Language Modeling (MLM)**: Predicting masked tokens based on surrounding context (e.g., BERT style).
+
+### Scaling Laws
+Performance typically improves predictably with increases in:
+1. **Compute**: Total FLOPs used for training.
+2. **Dataset Size**: Number of training tokens.
+3. **Parameters**: Number of weights in the model.
+
+## Recent SOTA Model (01/2026)
+
+### Falcon-H1R 7B
+Released in **January 2026** by the **Technology Innovation Institute (TII)**, Falcon-H1R 7B represents a shift towards efficient hybrid architectures.
+
+- **Architecture**: **Transformer-Mamba Hybrid**. It combines the parallel processing capabilities of Transformers (attention mechanisms) with the linear-time inference of Mamba (state space models).
+- **Performance**: Despite its relatively small size (7B parameters), it achieves an **88.1%** score on the AIME-24 math benchmark, rivaling much larger pure-Transformer models.
+- **Significance**: The H1R demonstrates that hybridizing recurrence with attention can yield state-of-the-art reasoning capabilities while maintaining memory efficiency and faster inference speeds compared to traditional architectures.
+
+## The Pre-training Pipeline
+
+1. **Data Curation**: Collecting, cleaning, and deduplicating massive corpora (CommonCrawl, GitHub, papers).
+2. **Tokenization**: Converting raw text into numerical tokens.
+3. **Training**: Running the model on thousands of GPUs for weeks or months.
+4. **Evaluation**: Monitoring loss and benchmarking on standard test sets (MMLU, HumanEval, etc.).

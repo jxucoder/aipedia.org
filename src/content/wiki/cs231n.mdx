@@ -1,0 +1,82 @@
+---
+title: "CS231n: CNNs for Visual Recognition"
+description: "Stanford's foundational course on deep learning for computer vision"
+tags: ["deep-learning", "cnn", "computer-vision", "course", "ilya-sutskever"]
+---
+
+import { CS231nViz } from '../../components/viz/CS231nViz';
+
+**CS231n** is Stanford's renowned course on Convolutional Neural Networks for Visual Recognition. It provides a comprehensive foundation in deep learning, from basic neural networks to state-of-the-art architectures.
+
+## Course Philosophy
+
+The course emphasizes:
+
+1. **First principles understanding** — implementing backpropagation from scratch
+2. **Mathematical foundations** — understanding why techniques work, not just how
+3. **Practical experience** — hands-on assignments with real datasets
+
+## Core Topics
+
+### Image Classification Pipeline
+
+The course starts with the fundamental task: mapping pixels to categories.
+
+$$
+f: \mathbb{R}^{H \times W \times C} \rightarrow \{1, 2, ..., K\}
+$$
+
+Students implement k-NN, linear classifiers, and loss functions before moving to neural networks.
+
+### Backpropagation
+
+The heart of deep learning—computing gradients through computational graphs:
+
+$$
+\frac{\partial L}{\partial w} = \frac{\partial L}{\partial y} \cdot \frac{\partial y}{\partial w}
+$$
+
+Implementing backprop from scratch builds intuition that frameworks abstract away.
+
+### CNN Architectures
+
+Progression through landmark architectures:
+- **LeNet** → **AlexNet** → **VGG** → **GoogLeNet** → **ResNet**
+
+Each architecture introduces key concepts: depth, skip connections, inception modules.
+
+## Interactive Overview
+
+Explore the course structure and key concepts:
+
+<CS231nViz client:load />
+
+## Why It's on Ilya's List
+
+This course provides the **foundational vocabulary** of modern AI:
+
+- Understanding convolution, pooling, and feature hierarchies
+- Intuition for optimization landscapes and training dynamics
+- Context for why certain architectural choices matter
+
+Many concepts introduced in CS231n (attention, residual connections, normalization) recur throughout modern AI systems, from vision to language models.
+
+## Key Assignments
+
+| Assignment | Skills Developed |
+|-----------|------------------|
+| k-NN & SVM | Vectorized numpy, loss functions |
+| Neural Networks | Backprop, modular design |
+| CNNs | Conv layers, architectures |
+| RNNs & Attention | Sequence modeling |
+| GANs | Generative modeling |
+
+## Resources
+
+- **Course Website**: https://cs231n.stanford.edu/
+- **Video Lectures**: Available on YouTube
+- **Notes**: Comprehensive written guides on cs231n.github.io
+
+## Key Insight
+
+CS231n's lasting value isn't specific architectures—it's building intuition for how neural networks learn hierarchical representations from data.
