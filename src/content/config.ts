@@ -6,6 +6,7 @@ const wiki = defineCollection({
     title: z.string(),
     description: z.string(),
     tags: z.array(z.string()).default([]),
+    date: z.coerce.date().optional(),
     draft: z.boolean().default(false),
   }),
 });
