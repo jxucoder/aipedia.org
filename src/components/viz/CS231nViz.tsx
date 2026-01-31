@@ -169,13 +169,6 @@ export function CS231nViz() {
         </div>
       </div>
 
-      <div className="mt-6 p-4 bg-gradient-to-r from-accent/10 to-transparent rounded-lg border border-accent/30">
-        <div className="text-sm font-medium text-accent mb-1">Why Ilya Recommended This</div>
-        <div className="text-xs text-text-secondary">
-          CS231n provides the foundational understanding of how neural networks learn visual representations—
-          essential context for understanding modern AI systems.
-        </div>
-      </div>
     </div>
   );
 }
