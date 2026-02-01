@@ -1,0 +1,170 @@
+---
+title: "Recursive Language Models"
+description: "A paradigm where LLMs treat context as an environment and recursively call themselves on sub-problems"
+date: 2026-02-01
+tags: ["language-models", "inference", "long-context", "agents"]
+---
+
+import { RLMViz } from '../../components/viz/RLMViz';
+
+**Recursive Language Models** (RLMs) are a general inference paradigm that enables language models to process contexts far beyond their native window by treating the input as an external environment rather than consuming it directly.
+
+## Motivation
+
+Standard language models suffer from **context rot**—performance degrades as input length approaches or exceeds the context window. Even models with 128K+ token windows struggle with:
+
+- Retrieval accuracy in long documents
+- Multi-hop reasoning across distant passages
+- Maintaining coherence over extended contexts
+
+RLMs address this by fundamentally changing how models interact with their input.
+
+## Core Insight
+
+Instead of:
+```python
+# Traditional: context IN the prompt
+response = llm.completion(f"{huge_context}\n\nQuestion: {query}")
+```
+
+RLMs do:
+```python
+# RLM: context AS a variable in an environment
+repl.set_variable("context", huge_context)
+response = rlm.completion(query)  # Model writes code to explore context
+```
+
+The context becomes an **environment variable** in a REPL that the model can programmatically query, slice, search, and recursively process.
+
+## How It Works
+
+1. **Load context into REPL**: The full input is stored as a string variable in a Python environment
+2. **System prompt**: The root model receives instructions on how to interact with the environment
+3. **Programmatic access**: The model can read slices, write helper functions, and spawn sub-LLM calls
+4. **Recursive decomposition**: Complex queries trigger recursive calls on smaller chunks
+5. **Result combination**: Answers bubble up and combine into the final response
+
+## Interactive Demo
+
+Explore how RLMs decompose problems and search through massive contexts:
+
+<RLMViz client:load />
+
+## Example: Needle in a Haystack
+
+Finding a specific fact in 10M tokens:
+
+**Traditional LLM approach**:
+- Load all 10M tokens into context
+- Attention over every token: $O(N)$ complexity
+- Fails due to context window limits
+
+**RLM approach**:
+```python
+def find_needle(context_var, query):
+    # Split into chunks
+    chunks = rlm.call("Divide context into 10 sections")
+
+    # Query each chunk
+    for i, chunk in enumerate(chunks):
+        result = rlm.call(f"Does section {i} contain: {query}?")
+        if result.found:
+            # Recursive drill-down
+            return find_needle(chunk, query)
+
+    # Base case: small enough to read directly
+    return rlm.call(f"Extract answer from: {context_var}")
+```
+
+Complexity: $O(\log N)$ — exponentially faster than linear scan.
+
+## Architecture
+
+The RLM system consists of:
+
+| Component | Role |
+|-----------|------|
+| **Root LLM** | Orchestrates the search, never sees raw context |
+| **REPL Environment** | Holds context as variable, executes model-generated code |
+| **Sub-LLM Calls** | Recursive invocations on context slices |
+| **Sandbox** | Secure execution (Docker, Modal, or local) |
+
+## Results
+
+From the paper's benchmarks:
+
+| Task | Vanilla LLM | RLM | Improvement |
+|------|-------------|-----|-------------|
+| Needle-in-Haystack (1M tokens) | 23% | 94% | +71% |
+| Multi-hop QA | 31% | 78% | +47% |
+| Long Document Summarization | 45% | 82% | +37% |
+
+Key findings:
+- Processes inputs **100x beyond context windows**
+- **No degradation** at 10M+ tokens
+- **RLM-Qwen3-8B** outperforms base model by 28.3% on average
+- Approaches GPT-5 quality on long-context tasks
+
+## Code Example
+
+Using the official RLM library:
+
+```python
+from rlm import RLM
+
+# Initialize with any backend
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={"model_name": "gpt-5-nano"},
+    verbose=True,
+)
+
+# Process arbitrarily long context
+with open("giant_document.txt") as f:
+    context = f.read()  # 10M+ characters
+
+result = rlm.completion(
+    query="What are the key findings about climate change?",
+    context=context
+)
+print(result.response)
+```
+
+## Why "Recursive"?
+
+The model **calls itself** on sub-problems—the classic definition of recursion:
+
+```
+rlm(query, full_context)
+├── rlm(query, chunk_1)
+│   ├── rlm(query, chunk_1a)
+│   └── rlm(query, chunk_1b)
+├── rlm(query, chunk_2)
+└── combine(results)
+```
+
+Each sub-call can spawn its own sub-calls until reaching a base case small enough to answer directly.
+
+## Limitations
+
+- **Latency overhead**: Synchronous sub-calls increase end-to-end time
+- **Simple tasks**: Overkill for short contexts where direct inference is faster
+- **Cost**: Multiple LLM calls per query
+- **Complexity**: Requires REPL environment setup
+
+## Future Directions
+
+- **Asynchronous sub-calls**: Parallel recursive queries
+- **Native training**: Models trained end-to-end for recursive reasoning
+- **Long-horizon agents**: Tasks spanning weeks with persistent context management
+
+## Key Resources
+
+- **Paper**: Recursive Language Models (arXiv:2512.24601)
+  https://arxiv.org/abs/2512.24601
+
+- **Code**: Official implementation
+  https://github.com/alexzhang13/rlm
+
+- **Blog**: Prime Intellect's RLM overview
+  https://www.primeintellect.ai/blog/rlm
