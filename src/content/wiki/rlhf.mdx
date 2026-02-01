@@ -1,0 +1,88 @@
+---
+title: "RLHF: Reinforcement Learning from Human Feedback"
+description: "Aligning language models with human preferences through reward modeling"
+date: 2026-02-01
+tags: ["deep-learning", "nlp", "alignment", "reinforcement-learning", "foundation-models"]
+---
+
+import { RLHFViz } from '../../components/viz/RLHFViz';
+
+**RLHF (Reinforcement Learning from Human Feedback)** is the technique that transformed GPT from a text predictor into a helpful assistant. By training on human preferences rather than just next-token prediction, RLHF aligns models with human values.
+
+## The Alignment Problem
+
+Pre-trained LLMs optimize for:
+
+$$
+\mathcal{L}_{\text{pretrain}} = -\sum_i \log P(x_i | x_{<i})
+$$
+
+This produces fluent text but not necessarily *helpful*, *honest*, or *harmless* responses. RLHF bridges this gap.
+
+## The Three-Stage Pipeline
+
+### Stage 1: Supervised Fine-Tuning (SFT)
+
+Fine-tune the base model on high-quality demonstrations:
+
+$$
+\mathcal{L}_{\text{SFT}} = -\sum_i \log P_\theta(y_i | x, y_{<i})
+$$
+
+where $(x, y)$ are human-written prompt-response pairs.
+
+### Stage 2: Reward Model Training
+
+Collect comparison data: humans rank multiple responses to the same prompt.
+
+Train a reward model $R_\phi$ using the Bradley-Terry preference model:
+
+$$
+P(y_1 \succ y_2 | x) = \sigma(R_\phi(x, y_1) - R_\phi(x, y_2))
+$$
+
+Loss function:
+
+$$
+\mathcal{L}_{\text{RM}} = -\mathbb{E}_{(x, y_w, y_l)}[\log \sigma(R_\phi(x, y_w) - R_\phi(x, y_l))]
+$$
+
+where $y_w$ is the preferred response and $y_l$ is the rejected one.
+
+### Stage 3: RL Fine-Tuning (PPO)
+
+Optimize the policy to maximize reward while staying close to the SFT model:
+
+$$
+\mathcal{L}_{\text{RLHF}} = \mathbb{E}_{x \sim D, y \sim \pi_\theta}[R_\phi(x, y)] - \beta \cdot D_{KL}(\pi_\theta || \pi_{\text{SFT}})
+$$
+
+The KL penalty prevents the model from gaming the reward model with unnatural outputs.
+
+## Why KL Regularization?
+
+Without the KL term, the model finds adversarial responses that score high on the reward model but are gibberish to humans. The constraint keeps outputs within the distribution of sensible language.
+
+## Interactive Visualization
+
+Explore the RLHF pipeline: SFT, reward modeling, and PPO optimization:
+
+<RLHFViz client:load />
+
+## Practical Considerations
+
+| Challenge | Solution |
+|-----------|----------|
+| Reward hacking | KL penalty, reward model ensembles |
+| Label noise | Multiple annotators, calibration |
+| Distribution shift | Online data collection |
+| Cost | Efficient preference collection UI |
+
+## Impact
+
+RLHF powers:
+- ChatGPT and GPT-4
+- Claude
+- Gemini
+
+It's the key technique that made LLMs usable as assistants rather than just text generators.

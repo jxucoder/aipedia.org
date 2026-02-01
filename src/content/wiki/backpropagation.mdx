@@ -1,0 +1,116 @@
+---
+title: "Backpropagation"
+description: "The algorithm that enables neural networks to learn by computing gradients efficiently"
+date: 2026-02-01
+tags: ["deep-learning", "fundamentals", "optimization", "neural-networks"]
+---
+
+import { BackpropViz } from '../../components/viz/BackpropViz';
+
+**Backpropagation** is the algorithm that makes deep learning possible. It efficiently computes gradients of the loss with respect to every parameter in a neural network, enabling gradient-based optimization.
+
+## The Core Problem
+
+To train a neural network, we need:
+
+$$
+\frac{\partial L}{\partial w_i} \quad \text{for every weight } w_i
+$$
+
+Naively computing each gradient separately would be prohibitively expensive. Backpropagation does it efficiently.
+
+## The Chain Rule
+
+Backpropagation is just the chain rule applied systematically:
+
+$$
+\frac{\partial L}{\partial x} = \frac{\partial L}{\partial y} \cdot \frac{\partial y}{\partial x}
+$$
+
+If $y = f(x)$ and $L = g(y)$, we can compute $\frac{\partial L}{\partial x}$ from $\frac{\partial L}{\partial y}$ and local gradient $\frac{\partial y}{\partial x}$.
+
+## Forward and Backward Pass
+
+### Forward Pass
+Compute outputs layer by layer:
+
+$$
+z^{(l)} = W^{(l)} a^{(l-1)} + b^{(l)}, \quad a^{(l)} = \sigma(z^{(l)})
+$$
+
+Store activations for the backward pass.
+
+### Backward Pass
+Propagate gradients from output to input:
+
+$$
+\delta^{(l)} = \frac{\partial L}{\partial z^{(l)}} = \left( (W^{(l+1)})^T \delta^{(l+1)} \right) \odot \sigma'(z^{(l)})
+$$
+
+Then compute weight gradients:
+
+$$
+\frac{\partial L}{\partial W^{(l)}} = \delta^{(l)} (a^{(l-1)})^T
+$$
+
+## Interactive Visualization
+
+Watch gradients flow backward through a network:
+
+<BackpropViz client:load />
+
+## Computational Graph View
+
+Modern frameworks represent computation as a **directed acyclic graph**:
+
+1. **Forward**: Traverse graph, compute outputs
+2. **Backward**: Traverse in reverse, accumulate gradients
+
+Each node stores:
+- Forward function: $y = f(x_1, \ldots, x_n)$
+- Backward function: $\frac{\partial L}{\partial x_i}$ given $\frac{\partial L}{\partial y}$
+
+## Common Layer Gradients
+
+| Layer | Forward | Backward |
+|-------|---------|----------|
+| Linear | $y = Wx$ | $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial y} x^T$ |
+| ReLU | $y = \max(0, x)$ | $\frac{\partial L}{\partial x} = \frac{\partial L}{\partial y} \cdot \mathbf{1}_{x > 0}$ |
+| Softmax+CE | $L = -\log p_c$ | $\frac{\partial L}{\partial z} = p - y$ |
+| BatchNorm | $y = \gamma \hat{x} + \beta$ | (complex, involves batch statistics) |
+
+## Vanishing/Exploding Gradients
+
+Deep networks can suffer from:
+
+$$
+\frac{\partial L}{\partial w^{(1)}} = \prod_{l=2}^{L} \frac{\partial z^{(l)}}{\partial z^{(l-1)}} \cdot \frac{\partial L}{\partial z^{(L)}}
+$$
+
+If factors < 1: **vanishing gradients** (early layers don't learn)
+If factors > 1: **exploding gradients** (unstable training)
+
+**Solutions**: ReLU, residual connections, careful initialization, normalization.
+
+## Automatic Differentiation
+
+Modern frameworks (PyTorch, JAX) implement backprop automatically:
+
+```python
+# Forward
+y = model(x)
+loss = criterion(y, target)
+
+# Backward (computes all gradients)
+loss.backward()
+
+# Update
+optimizer.step()
+```
+
+## Why Backprop Matters
+
+Backpropagation is:
+- **Efficient**: $O(n)$ gradient computation for $n$ parameters
+- **General**: Works for any differentiable computation graph
+- **Foundational**: Enables all modern deep learning

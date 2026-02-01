@@ -1,0 +1,118 @@
+---
+title: "Chain-of-Thought Prompting"
+description: "Eliciting step-by-step reasoning in language models for complex problem solving"
+date: 2026-02-01
+tags: ["deep-learning", "nlp", "language-models", "reasoning", "prompting"]
+---
+
+import { CoTViz } from '../../components/viz/CoTViz';
+
+**Chain-of-Thought (CoT) Prompting** dramatically improves LLM performance on reasoning tasks by asking the model to show its work—generating intermediate steps before the final answer.
+
+## The Problem
+
+Standard prompting fails on multi-step reasoning:
+
+```
+Q: Roger has 5 tennis balls. He buys 2 cans of 3 balls each. How many does he have?
+A: 11 ✗ (LLM might output wrong answer directly)
+```
+
+## The Solution: Show Your Work
+
+CoT prompting includes reasoning steps:
+
+```
+Q: Roger has 5 tennis balls. He buys 2 cans of 3 balls each. How many does he have?
+A: Roger starts with 5 balls. 2 cans × 3 balls = 6 balls. 5 + 6 = 11 balls. ✓
+```
+
+## Why It Works
+
+By generating intermediate steps, the model:
+1. **Decomposes** complex problems into simpler sub-problems
+2. **Maintains state** through the reasoning process
+3. **Reduces error** by checking each step
+4. **Allocates compute** proportional to problem difficulty
+
+## Two Approaches
+
+### Few-Shot CoT
+
+Provide examples with reasoning chains:
+
+$$
+\text{Prompt} = [(x_1, r_1, y_1), \ldots, (x_k, r_k, y_k), x_{test}]
+$$
+
+where $r_i$ are the reasoning chains.
+
+### Zero-Shot CoT
+
+Simply append "Let's think step by step":
+
+```
+Q: [problem]
+A: Let's think step by step.
+```
+
+This single phrase unlocks reasoning in large models.
+
+## Interactive Visualization
+
+Compare standard vs chain-of-thought prompting:
+
+<CoTViz client:load />
+
+## Performance Gains
+
+| Task | Standard | Chain-of-Thought |
+|------|----------|------------------|
+| GSM8K (math) | 18% | 57% |
+| MultiArith | 33% | 93% |
+| StrategyQA | 65% | 73% |
+
+*Results for PaLM 540B*
+
+## Emergent Ability
+
+CoT benefits appear mainly at scale:
+
+$$
+\text{Accuracy gain} \propto \log(\text{model size})
+$$
+
+Small models may produce incoherent chains; large models generate meaningful reasoning.
+
+## Self-Consistency
+
+Improve further by sampling multiple chains and voting:
+
+$$
+\hat{y} = \arg\max_y \sum_{i=1}^{n} \mathbf{1}[y_i = y]
+$$
+
+Generate $n$ reasoning paths, extract answers, take majority vote.
+
+## Variants
+
+| Method | Key Idea |
+|--------|----------|
+| CoT | Show reasoning steps |
+| Zero-shot CoT | "Let's think step by step" |
+| Self-Consistency | Sample multiple chains, vote |
+| Tree of Thoughts | Explore branching reasoning paths |
+| ReAct | Interleave reasoning and actions |
+
+## When to Use CoT
+
+**Effective for:**
+- Math word problems
+- Multi-step reasoning
+- Logical deduction
+- Code generation
+
+**Less helpful for:**
+- Simple factual questions
+- Single-step tasks
+- Creative writing

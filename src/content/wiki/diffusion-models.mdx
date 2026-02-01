@@ -1,0 +1,99 @@
+---
+title: "Diffusion Models"
+description: "Generative models that learn to denoise, enabling high-quality image and video synthesis"
+date: 2026-02-01
+tags: ["deep-learning", "generative", "computer-vision", "diffusion", "foundation-models"]
+---
+
+import { DiffusionViz } from '../../components/viz/DiffusionViz';
+
+**Diffusion Models** generate data by learning to reverse a gradual noising process. Starting from pure noise, they iteratively denoise to produce remarkably high-quality images, videos, and audio.
+
+## Core Idea
+
+The process has two phases:
+
+**Forward process** (fixed): Gradually add Gaussian noise to data over $T$ steps:
+
+$$
+q(x_t | x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t} x_{t-1}, \beta_t I)
+$$
+
+**Reverse process** (learned): Denoise step by step:
+
+$$
+p_\theta(x_{t-1} | x_t) = \mathcal{N}(x_{t-1}; \mu_\theta(x_t, t), \Sigma_\theta(x_t, t))
+$$
+
+## The Closed-Form Forward Process
+
+We can jump directly to any timestep $t$:
+
+$$
+q(x_t | x_0) = \mathcal{N}(x_t; \sqrt{\bar{\alpha}_t} x_0, (1-\bar{\alpha}_t) I)
+$$
+
+where $\bar{\alpha}_t = \prod_{s=1}^{t} (1-\beta_s)$.
+
+This means: $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon$, where $\epsilon \sim \mathcal{N}(0, I)$.
+
+## Training Objective
+
+Instead of predicting $\mu_\theta$, predict the noise $\epsilon$:
+
+$$
+\mathcal{L}_{\text{simple}} = \mathbb{E}_{t, x_0, \epsilon}\left[ \| \epsilon - \epsilon_\theta(x_t, t) \|^2 \right]
+$$
+
+Sample $t$ uniformly, noise the image, predict the noise. Remarkably simple yet effective.
+
+## Sampling (Inference)
+
+Start with $x_T \sim \mathcal{N}(0, I)$, then iterate:
+
+$$
+x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}} \epsilon_\theta(x_t, t)\right) + \sigma_t z
+$$
+
+where $z \sim \mathcal{N}(0, I)$ and $\sigma_t$ controls stochasticity.
+
+## Classifier-Free Guidance
+
+To improve sample quality, interpolate between conditional and unconditional predictions:
+
+$$
+\tilde{\epsilon}_\theta(x_t, t, c) = \epsilon_\theta(x_t, t, \emptyset) + w \cdot (\epsilon_\theta(x_t, t, c) - \epsilon_\theta(x_t, t, \emptyset))
+$$
+
+where $w > 1$ strengthens conditioning (e.g., on text prompts).
+
+## Interactive Visualization
+
+Watch the diffusion process in action—forward noising and reverse denoising:
+
+<DiffusionViz client:load />
+
+## Architecture: U-Net
+
+The denoising network is typically a U-Net with:
+- **Time embedding**: Sinusoidal encoding of $t$
+- **Attention layers**: Self-attention and cross-attention (for conditioning)
+- **Skip connections**: Preserve spatial information
+
+## Key Models
+
+| Model | Innovation |
+|-------|------------|
+| DDPM | Foundational formulation |
+| DDIM | Deterministic sampling, fewer steps |
+| Stable Diffusion | Latent space diffusion |
+| DALL-E 2 | CLIP guidance |
+| Imagen | Large language model conditioning |
+
+## Why Diffusion Works
+
+Unlike GANs (adversarial, unstable) or VAEs (blurry), diffusion models:
+1. Have stable training (simple MSE loss)
+2. Produce high-fidelity samples
+3. Enable controllable generation
+4. Scale effectively with compute

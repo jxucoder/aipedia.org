@@ -1,0 +1,102 @@
+---
+title: "Reinforcement Learning"
+description: "Learning optimal behavior through interaction with an environment"
+date: 2026-02-01
+tags: ["deep-learning", "reinforcement-learning", "agents", "decision-making"]
+---
+
+import { RLViz } from '../../components/viz/RLViz';
+
+**Reinforcement Learning (RL)** is the study of agents learning to make decisions by interacting with an environment. Unlike supervised learning, RL learns from rewards and consequences rather than labeled examples.
+
+## The RL Framework
+
+An agent interacts with an environment in discrete timesteps:
+
+1. Agent observes state $s_t$
+2. Agent takes action $a_t$
+3. Environment returns reward $r_t$ and next state $s_{t+1}$
+4. Repeat
+
+The goal: learn a policy $\pi(a|s)$ that maximizes cumulative reward.
+
+## Markov Decision Process (MDP)
+
+RL problems are formalized as MDPs:
+
+- **States** $\mathcal{S}$: Possible situations
+- **Actions** $\mathcal{A}$: Available choices
+- **Transition** $P(s'|s,a)$: Environment dynamics
+- **Reward** $R(s,a,s')$: Feedback signal
+- **Discount** $\gamma \in [0,1]$: Future reward weighting
+
+## The Objective
+
+Maximize expected discounted return:
+
+$$
+J(\pi) = \mathbb{E}_{\tau \sim \pi}\left[\sum_{t=0}^{\infty} \gamma^t r_t\right]
+$$
+
+where $\tau = (s_0, a_0, r_0, s_1, a_1, r_1, \ldots)$ is a trajectory.
+
+## Value Functions
+
+**State value**: Expected return from state $s$ under policy $\pi$:
+
+$$
+V^\pi(s) = \mathbb{E}_\pi\left[\sum_{t=0}^{\infty} \gamma^t r_t \mid s_0 = s\right]
+$$
+
+**Action value (Q-function)**: Expected return from taking action $a$ in state $s$:
+
+$$
+Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{t=0}^{\infty} \gamma^t r_t \mid s_0 = s, a_0 = a\right]
+$$
+
+## Bellman Equations
+
+Value functions satisfy recursive relationships:
+
+$$
+V^\pi(s) = \sum_a \pi(a|s) \sum_{s'} P(s'|s,a)[R(s,a,s') + \gamma V^\pi(s')]
+$$
+
+$$
+Q^\pi(s,a) = \sum_{s'} P(s'|s,a)[R(s,a,s') + \gamma \sum_{a'} \pi(a'|s') Q^\pi(s',a')]
+$$
+
+## Interactive Visualization
+
+Watch an agent learn to navigate through trial and error:
+
+<RLViz client:load />
+
+## Two Approaches
+
+**Value-based**: Learn $Q^*(s,a)$, act greedily
+- Q-learning, DQN
+- Works well for discrete actions
+
+**Policy-based**: Learn $\pi_\theta(a|s)$ directly
+- Policy gradient, PPO
+- Handles continuous actions
+
+## Key Algorithms
+
+| Algorithm | Type | Key Idea |
+|-----------|------|----------|
+| Q-Learning | Value | Off-policy TD learning |
+| DQN | Value | Neural network Q-function |
+| REINFORCE | Policy | Monte Carlo policy gradient |
+| A2C/A3C | Actor-Critic | Value baseline reduces variance |
+| PPO | Policy | Clipped surrogate objective |
+| SAC | Actor-Critic | Maximum entropy RL |
+
+## Exploration vs Exploitation
+
+A fundamental tradeoff:
+- **Explore**: Try new actions to discover better strategies
+- **Exploit**: Use current knowledge to maximize reward
+
+Solutions: ε-greedy, UCB, entropy bonuses, curiosity-driven exploration.

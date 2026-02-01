@@ -1,0 +1,116 @@
+---
+title: "Policy Gradient Methods"
+description: "Directly optimizing policies through gradient ascent on expected returns"
+date: 2026-02-01
+tags: ["deep-learning", "reinforcement-learning", "optimization"]
+---
+
+import { PolicyGradientViz } from '../../components/viz/PolicyGradientViz';
+
+**Policy Gradient Methods** directly optimize the policy $\pi_\theta(a|s)$ by computing gradients of the expected return. Unlike value-based methods, they naturally handle continuous actions and stochastic policies.
+
+## The Objective
+
+Maximize expected return:
+
+$$
+J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{T} \gamma^t r_t\right]
+$$
+
+We need $\nabla_\theta J(\theta)$ to do gradient ascent.
+
+## The Policy Gradient Theorem
+
+The key result that makes this tractable:
+
+$$
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t|s_t) \cdot R_t\right]
+$$
+
+where $R_t = \sum_{t'=t}^{T} \gamma^{t'-t} r_{t'}$ is the return from step $t$.
+
+## Why Log Probability?
+
+The "log-derivative trick":
+
+$$
+\nabla_\theta \pi_\theta(a|s) = \pi_\theta(a|s) \nabla_\theta \log \pi_\theta(a|s)
+$$
+
+This lets us estimate gradients through sampling without knowing environment dynamics.
+
+## REINFORCE Algorithm
+
+The simplest policy gradient:
+
+```python
+for episode in episodes:
+    states, actions, rewards = collect_trajectory(policy)
+    returns = compute_returns(rewards, gamma)
+    
+    loss = 0
+    for s, a, R in zip(states, actions, returns):
+        loss -= log_prob(policy(s), a) * R
+    
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+```
+
+## Interactive Visualization
+
+Watch how policy gradients update a simple policy:
+
+<PolicyGradientViz client:load />
+
+## High Variance Problem
+
+REINFORCE has high variance because:
+1. Returns vary widely across episodes
+2. Credit assignment is imprecise (which action caused the reward?)
+
+## Variance Reduction: Baselines
+
+Subtract a baseline $b(s)$ from returns:
+
+$$
+\nabla_\theta J(\theta) = \mathbb{E}\left[\nabla_\theta \log \pi_\theta(a_t|s_t) \cdot (R_t - b(s_t))\right]
+$$
+
+This doesn't change the expected gradient but reduces variance. Common choice: $b(s) = V(s)$.
+
+## Actor-Critic Methods
+
+Use a learned value function as baseline:
+
+- **Actor**: Policy $\pi_\theta(a|s)$
+- **Critic**: Value function $V_\phi(s)$
+
+$$
+\nabla_\theta J(\theta) \approx \nabla_\theta \log \pi_\theta(a_t|s_t) \cdot (r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t))
+$$
+
+The advantage $A_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ tells us if the action was better or worse than average.
+
+## Key Algorithms
+
+| Algorithm | Key Idea |
+|-----------|----------|
+| REINFORCE | Vanilla policy gradient |
+| A2C | Actor-critic with advantage |
+| A3C | Asynchronous parallel training |
+| PPO | Clipped surrogate objective |
+| TRPO | Trust region constraint |
+
+## Advantages of Policy Gradients
+
+1. **Continuous actions**: Natural parameterization
+2. **Stochastic policies**: Better exploration
+3. **Direct optimization**: Optimize what you care about
+4. **Convergence**: Guaranteed to local optimum
+
+## When to Use
+
+- Continuous action spaces
+- When you need stochastic policies
+- When state representation is rich enough

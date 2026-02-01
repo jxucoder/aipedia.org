@@ -1,0 +1,125 @@
+---
+title: "Deep Q-Networks (DQN)"
+description: "Combining Q-learning with deep neural networks for Atari-level game playing"
+date: 2026-02-01
+tags: ["deep-learning", "reinforcement-learning", "games", "classic"]
+---
+
+import { DQNViz } from '../../components/viz/DQNViz';
+
+**Deep Q-Networks (DQN)** demonstrated that deep reinforcement learning could achieve superhuman performance on Atari games, learning directly from pixels. It was a landmark result that sparked the modern deep RL revolution.
+
+## Q-Learning Refresher
+
+Learn the optimal action-value function:
+
+$$
+Q^*(s, a) = \mathbb{E}\left[r + \gamma \max_{a'} Q^*(s', a') \mid s, a\right]
+$$
+
+The optimal policy: $\pi^*(s) = \arg\max_a Q^*(s, a)$
+
+## The Challenge: Function Approximation
+
+For large state spaces (like images), we can't store Q-values in a table. Solution: approximate with a neural network:
+
+$$
+Q(s, a; \theta) \approx Q^*(s, a)
+$$
+
+But naive combination of deep learning + Q-learning is unstable!
+
+## Key Innovations
+
+### 1. Experience Replay
+
+Store transitions $(s, a, r, s')$ in a replay buffer and sample random mini-batches:
+
+- Breaks correlation between consecutive samples
+- Reuses experience efficiently
+- Stabilizes training
+
+### 2. Target Network
+
+Use a separate network for computing targets:
+
+$$
+y = r + \gamma \max_{a'} Q(s', a'; \theta^-)
+$$
+
+where $\theta^-$ is a copy of $\theta$ updated periodically (e.g., every 10k steps).
+
+- Prevents moving target problem
+- Dramatically improves stability
+
+## The DQN Loss
+
+$$
+\mathcal{L}(\theta) = \mathbb{E}_{(s,a,r,s') \sim \mathcal{D}}\left[(y - Q(s, a; \theta))^2\right]
+$$
+
+where $y = r + \gamma \max_{a'} Q(s', a'; \theta^-)$.
+
+## Interactive Visualization
+
+Watch DQN learn to estimate Q-values:
+
+<DQNViz client:load />
+
+## Algorithm
+
+```python
+Initialize replay buffer D, Q-network θ, target network θ⁻
+for episode in range(num_episodes):
+    s = env.reset()
+    for t in range(max_steps):
+        # ε-greedy action selection
+        if random() < ε:
+            a = random_action()
+        else:
+            a = argmax_a Q(s, a; θ)
+        
+        s', r, done = env.step(a)
+        D.store(s, a, r, s', done)
+        
+        # Sample and train
+        batch = D.sample(batch_size)
+        targets = r + γ * max_a' Q(s', a'; θ⁻) * (1 - done)
+        loss = MSE(Q(s, a; θ), targets)
+        θ.update(loss)
+        
+        # Periodic target update
+        if t % target_update_freq == 0:
+            θ⁻ = θ
+```
+
+## Hyperparameters
+
+| Parameter | Typical Value |
+|-----------|---------------|
+| Replay buffer size | 1M transitions |
+| Batch size | 32 |
+| Learning rate | 0.00025 |
+| Discount γ | 0.99 |
+| Target update freq | 10,000 steps |
+| ε decay | 1.0 → 0.1 over 1M steps |
+
+## Improvements (Rainbow DQN)
+
+| Enhancement | Benefit |
+|-------------|---------|
+| Double DQN | Reduces overestimation bias |
+| Prioritized replay | Focus on important transitions |
+| Dueling networks | Separate value and advantage |
+| Multi-step returns | Better credit assignment |
+| Distributional RL | Model return distribution |
+| Noisy networks | Better exploration |
+
+## Impact
+
+DQN proved that:
+1. Deep RL can learn from high-dimensional sensory input
+2. Experience replay + target networks stabilize training
+3. A single architecture can master diverse tasks
+
+This opened the door to AlphaGo, robotic manipulation, and modern RL research.

@@ -1,0 +1,99 @@
+---
+title: "Layer Normalization"
+description: "Normalizing across features for sequence models and Transformers"
+date: 2026-02-01
+tags: ["deep-learning", "fundamentals", "training", "transformers"]
+---
+
+import { LayerNormViz } from '../../components/viz/LayerNormViz';
+
+**Layer Normalization (LayerNorm)** normalizes across the feature dimension rather than the batch dimension. This makes it ideal for Transformers and RNNs where batch statistics are problematic.
+
+## The Key Difference
+
+**BatchNorm**: Normalize across batch for each feature
+$$
+\hat{x}_{n,d} = \frac{x_{n,d} - \mu_d}{\sqrt{\sigma_d^2 + \epsilon}}, \quad \mu_d = \frac{1}{N}\sum_n x_{n,d}
+$$
+
+**LayerNorm**: Normalize across features for each sample
+$$
+\hat{x}_{n,d} = \frac{x_{n,d} - \mu_n}{\sqrt{\sigma_n^2 + \epsilon}}, \quad \mu_n = \frac{1}{D}\sum_d x_{n,d}
+$$
+
+## The Algorithm
+
+For an input $x \in \mathbb{R}^D$:
+
+$$
+\mu = \frac{1}{D}\sum_{d=1}^{D} x_d, \quad \sigma^2 = \frac{1}{D}\sum_{d=1}^{D} (x_d - \mu)^2
+$$
+
+$$
+\hat{x} = \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}}, \quad y = \gamma \odot \hat{x} + \beta
+$$
+
+where $\gamma, \beta \in \mathbb{R}^D$ are learnable parameters.
+
+## Interactive Visualization
+
+Compare BatchNorm and LayerNorm normalization patterns:
+
+<LayerNormViz client:load />
+
+## Why LayerNorm for Transformers?
+
+1. **Batch independence**: Each sequence is normalized independently
+2. **Variable sequence lengths**: No batch statistics needed
+3. **Inference consistency**: Same computation at train and test time
+4. **Autoregressive generation**: Works with batch size 1
+
+## Pre-Norm vs Post-Norm
+
+**Post-Norm** (original Transformer):
+$$
+x' = \text{LayerNorm}(x + \text{Sublayer}(x))
+$$
+
+**Pre-Norm** (modern preference):
+$$
+x' = x + \text{Sublayer}(\text{LayerNorm}(x))
+$$
+
+Pre-Norm enables better gradient flow and often converges faster.
+
+## RMSNorm: A Simpler Alternative
+
+Remove the mean centering:
+
+$$
+\hat{x} = \frac{x}{\sqrt{\frac{1}{D}\sum_d x_d^2 + \epsilon}} \cdot \gamma
+$$
+
+Used in LLaMA and many modern LLMs—simpler and often works just as well.
+
+## Comparison Table
+
+| Aspect | BatchNorm | LayerNorm | RMSNorm |
+|--------|-----------|-----------|---------|
+| Normalizes over | Batch | Features | Features |
+| Learnable params | 2D | 2D | D |
+| Mean centering | Yes | Yes | No |
+| Best for | CNNs | Transformers | LLMs |
+
+## Common Placements in Transformers
+
+```python
+# Pre-norm Transformer block
+def forward(x):
+    x = x + self.attn(self.norm1(x))
+    x = x + self.ffn(self.norm2(x))
+    return x
+```
+
+## Key Insight
+
+LayerNorm's batch independence makes it essential for:
+- Autoregressive generation (batch size 1)
+- Variable-length sequences
+- Distributed training across sequence dimension

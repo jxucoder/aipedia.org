@@ -1,0 +1,105 @@
+---
+title: "Latent Diffusion Models"
+description: "High-resolution image generation by diffusing in learned latent spaces"
+date: 2026-02-01
+tags: ["deep-learning", "generative", "computer-vision", "diffusion"]
+---
+
+import { LatentDiffusionViz } from '../../components/viz/LatentDiffusionViz';
+
+**Latent Diffusion Models (LDMs)** make high-resolution image generation practical by running the diffusion process in a compressed latent space rather than pixel space. This is the architecture behind Stable Diffusion.
+
+## The Problem with Pixel-Space Diffusion
+
+Diffusing a 512×512×3 image requires processing 786,432 dimensions per step. For thousands of denoising steps, this is extremely expensive.
+
+## The Solution: Compress First
+
+LDMs use a two-stage approach:
+
+1. **Encode**: Compress images to a smaller latent space
+2. **Diffuse**: Run diffusion in latent space
+3. **Decode**: Reconstruct to pixel space
+
+$$
+z = \mathcal{E}(x), \quad x' = \mathcal{D}(\hat{z})
+$$
+
+where $\mathcal{E}$ is the encoder, $\mathcal{D}$ is the decoder, and $\hat{z}$ is the denoised latent.
+
+## The Autoencoder
+
+Typically a **VQ-VAE** or **KL-VAE** trained separately:
+
+$$
+\mathcal{L}_{AE} = \|x - \mathcal{D}(\mathcal{E}(x))\|^2 + \lambda \cdot \text{Reg}(\mathcal{E}(x))
+$$
+
+The latent space is typically 8× or 4× smaller per dimension (64× or 16× in total pixels).
+
+## Diffusion in Latent Space
+
+Standard diffusion objective, but on latents:
+
+$$
+\mathcal{L}_{LDM} = \mathbb{E}_{z, \epsilon, t}\left[\|\epsilon - \epsilon_\theta(z_t, t, c)\|^2\right]
+$$
+
+where $c$ is the conditioning (text, class, etc.).
+
+## Interactive Visualization
+
+See how the latent space compression enables efficient generation:
+
+<LatentDiffusionViz client:load />
+
+## Conditioning via Cross-Attention
+
+Text conditioning is injected through cross-attention:
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d}}\right)V
+$$
+
+where:
+- $Q$ comes from the latent (image features)
+- $K, V$ come from the text encoder (CLIP or T5)
+
+## Architecture Overview
+
+```
+Text → CLIP → Cross-Attention
+                    ↓
+Noise → U-Net (in latent space) → Denoised Latent
+                                        ↓
+                                    Decoder → Image
+```
+
+## Efficiency Gains
+
+| Metric | Pixel Diffusion | Latent Diffusion |
+|--------|-----------------|------------------|
+| Dimensions | 512×512×3 | 64×64×4 |
+| Total dims | 786,432 | 16,384 |
+| Compression | 1× | 48× |
+| GPU memory | ~24GB | ~8GB |
+
+## Stable Diffusion Specifics
+
+- **VAE**: KL-regularized autoencoder
+- **U-Net**: ~860M parameters
+- **Text encoder**: CLIP ViT-L/14 (frozen)
+- **Latent size**: 64×64×4 for 512×512 images
+
+## Training Pipeline
+
+1. **Stage 1**: Train VAE on images (reconstruction + regularization)
+2. **Stage 2**: Train U-Net on latents with frozen VAE
+3. **Optional**: Fine-tune on specific domains
+
+## Key Insight
+
+By separating perceptual compression (autoencoder) from semantic generation (diffusion), LDMs achieve:
+- High-quality generation
+- Computational efficiency
+- Flexible conditioning

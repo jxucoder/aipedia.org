@@ -1,0 +1,91 @@
+---
+title: "In-Context Learning"
+description: "How large language models learn from examples in the prompt without weight updates"
+date: 2026-02-01
+tags: ["deep-learning", "nlp", "language-models", "emergent-abilities", "foundation-models"]
+---
+
+import { ICLViz } from '../../components/viz/ICLViz';
+
+**In-Context Learning (ICL)** is the remarkable ability of large language models to learn new tasks from examples provided in the prompt—without any gradient updates or fine-tuning.
+
+## The Phenomenon
+
+Given a few input-output examples, LLMs can generalize to new inputs:
+
+```
+Input: "The movie was terrible" → Sentiment: negative
+Input: "I loved every minute" → Sentiment: positive
+Input: "It was a waste of time" → Sentiment:
+```
+
+The model completes with "negative"—having learned the task from context alone.
+
+## Why It's Surprising
+
+Traditional machine learning requires:
+1. Collect labeled data
+2. Define a loss function
+3. Optimize weights via gradient descent
+
+ICL skips all of this. The model's weights remain frozen; "learning" happens through attention over the prompt.
+
+## Formal Framework
+
+Let $x_1, y_1, \ldots, x_k, y_k$ be demonstration examples and $x_{test}$ be a new input. The model computes:
+
+$$
+P(y_{test} | x_1, y_1, \ldots, x_k, y_k, x_{test})
+$$
+
+The demonstrations create a **task distribution** that the model conditions on.
+
+## How Many Examples?
+
+| Setting | Examples | Use Case |
+|---------|----------|----------|
+| Zero-shot | 0 | Task described in natural language |
+| One-shot | 1 | Single example + new input |
+| Few-shot | 2-32 | Multiple examples |
+
+More examples generally improve accuracy, but with diminishing returns.
+
+## Interactive Visualization
+
+See how adding examples affects model predictions:
+
+<ICLViz client:load />
+
+## What Makes ICL Work?
+
+Several hypotheses:
+
+1. **Task Recognition**: Model recognizes task from examples, retrieves learned behavior
+2. **Implicit Fine-Tuning**: Attention acts as a form of gradient descent
+3. **Bayesian Inference**: Model infers task distribution from demonstrations
+4. **Induction Heads**: Specific attention patterns copy patterns from context
+
+## Emergent Ability
+
+ICL appears only at scale:
+- Small models: Cannot do ICL effectively
+- GPT-3 (175B): Strong ICL ability emerges
+- Larger models: Increasingly robust ICL
+
+This "phase transition" makes ICL an **emergent capability**.
+
+## Best Practices
+
+| Practice | Effect |
+|----------|--------|
+| Diverse examples | Better generalization |
+| Consistent format | Clearer task signal |
+| Similar examples to test | Improved accuracy |
+| Clear separators | Reduces confusion |
+
+## Limitations
+
+- **Context window**: Limited by maximum sequence length
+- **Order sensitivity**: Performance can vary with example ordering
+- **Recency bias**: May weight recent examples more heavily
+- **Task complexity**: Struggles with multi-step reasoning (see Chain-of-Thought)

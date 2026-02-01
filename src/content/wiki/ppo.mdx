@@ -1,0 +1,107 @@
+---
+title: "Proximal Policy Optimization (PPO)"
+description: "A stable, sample-efficient policy gradient algorithm for reinforcement learning"
+date: 2026-02-01
+tags: ["deep-learning", "reinforcement-learning", "policy-gradient", "optimization"]
+---
+
+import { PPOViz } from '../../components/viz/PPOViz';
+
+**Proximal Policy Optimization (PPO)** is the most widely used deep reinforcement learning algorithm. It achieves strong performance while being simpler and more stable than prior methods like TRPO.
+
+## The Challenge
+
+Policy gradient methods can be unstable:
+- Too large an update → policy collapses
+- Too small an update → slow learning
+
+PPO solves this with a clipped objective that limits update size.
+
+## The PPO-Clip Objective
+
+$$
+L^{CLIP}(\theta) = \mathbb{E}_t \left[ \min\left( r_t(\theta) \hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \hat{A}_t \right) \right]
+$$
+
+where:
+- $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ is the probability ratio
+- $\hat{A}_t$ is the advantage estimate
+- $\epsilon$ is the clip range (typically 0.1-0.2)
+
+## How Clipping Works
+
+The clip function limits how much the ratio can change:
+
+$$
+\text{clip}(r, 1-\epsilon, 1+\epsilon) = \begin{cases}
+1-\epsilon & \text{if } r < 1-\epsilon \\
+r & \text{if } 1-\epsilon \leq r \leq 1+\epsilon \\
+1+\epsilon & \text{if } r > 1+\epsilon
+\end{cases}
+$$
+
+Taking the minimum ensures:
+- If $\hat{A} > 0$: Don't increase $r$ beyond $1+\epsilon$
+- If $\hat{A} < 0$: Don't decrease $r$ below $1-\epsilon$
+
+## Interactive Visualization
+
+See how the clipping mechanism constrains policy updates:
+
+<PPOViz client:load />
+
+## Advantage Estimation
+
+PPO typically uses **Generalized Advantage Estimation (GAE)**:
+
+$$
+\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}
+$$
+
+where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ is the TD error.
+
+The $\lambda$ parameter trades off bias vs variance.
+
+## Full Algorithm
+
+```python
+for iteration in range(num_iterations):
+    # Collect trajectories with current policy
+    trajectories = collect_rollouts(policy, env)
+    
+    # Compute advantages
+    advantages = compute_gae(trajectories, value_fn)
+    
+    # Multiple epochs of updates
+    for epoch in range(num_epochs):
+        for batch in trajectories.batches():
+            # PPO update
+            loss = ppo_clip_loss(batch, advantages)
+            optimizer.step(loss)
+```
+
+## Hyperparameters
+
+| Parameter | Typical Value | Effect |
+|-----------|---------------|--------|
+| $\epsilon$ (clip) | 0.1-0.2 | Update constraint |
+| $\gamma$ (discount) | 0.99 | Future reward weighting |
+| $\lambda$ (GAE) | 0.95 | Advantage bias-variance |
+| Epochs per update | 3-10 | Sample efficiency |
+| Batch size | 32-4096 | Gradient stability |
+
+## Why PPO is Popular
+
+1. **Simple**: Easier to implement than TRPO
+2. **Stable**: Clipping prevents catastrophic updates
+3. **Sample efficient**: Multiple epochs per rollout
+4. **General**: Works on continuous and discrete actions
+5. **Scalable**: Parallelizes well across workers
+
+## Applications
+
+PPO powers:
+- **RLHF**: Aligning language models (ChatGPT, Claude)
+- **Game AI**: OpenAI Five, DOTA 2
+- **Robotics**: Manipulation, locomotion
+- **Autonomous driving**: Decision making

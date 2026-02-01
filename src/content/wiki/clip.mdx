@@ -1,0 +1,82 @@
+---
+title: "CLIP: Contrastive Language-Image Pre-training"
+description: "Learning visual concepts from natural language supervision"
+date: 2026-02-01
+tags: ["deep-learning", "multimodal", "computer-vision", "nlp", "foundation-models"]
+---
+
+import { CLIPViz } from '../../components/viz/CLIPViz';
+
+**CLIP (Contrastive Language-Image Pre-training)** learns to connect images and text by training on 400 million image-text pairs from the internet. This simple approach produces remarkably flexible visual representations.
+
+## Core Idea: Learn from Captions
+
+Instead of predicting fixed categories, CLIP learns to match images with their natural language descriptions:
+
+$$
+\text{similarity}(I, T) = \frac{f_I(I) \cdot f_T(T)}{\|f_I(I)\| \cdot \|f_T(T)\|}
+$$
+
+where $f_I$ is an image encoder (ViT or ResNet) and $f_T$ is a text encoder (Transformer).
+
+## Contrastive Learning
+
+Given a batch of $N$ image-text pairs, CLIP maximizes similarity of correct pairs while minimizing incorrect ones:
+
+$$
+\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \left[ \log \frac{\exp(s_{ii}/\tau)}{\sum_{j=1}^{N} \exp(s_{ij}/\tau)} + \log \frac{\exp(s_{ii}/\tau)}{\sum_{j=1}^{N} \exp(s_{ji}/\tau)} \right]
+$$
+
+where $s_{ij} = f_I(I_i) \cdot f_T(T_j)$ and $\tau$ is a learned temperature.
+
+## Zero-Shot Classification
+
+CLIP enables classification without training on the target dataset:
+
+1. Create text prompts: "a photo of a \{class\}"
+2. Encode all prompts with text encoder
+3. Encode image with image encoder
+4. Predict class with highest image-text similarity
+
+$$
+p(y|x) = \frac{\exp(f_I(x) \cdot f_T(\text{prompt}_y) / \tau)}{\sum_{c} \exp(f_I(x) \cdot f_T(\text{prompt}_c) / \tau)}
+$$
+
+## Interactive Visualization
+
+Explore how CLIP matches images to text descriptions:
+
+<CLIPViz client:load />
+
+## Prompt Engineering
+
+Classification accuracy depends on prompt phrasing:
+
+| Prompt Template | ImageNet Acc |
+|----------------|--------------|
+| "\{class\}" | 63.5% |
+| "a photo of a \{class\}" | 68.3% |
+| "a good photo of a \{class\}" | 69.1% |
+| Ensemble of 80 templates | 76.2% |
+
+## Why CLIP Works
+
+1. **Scale**: 400M image-text pairs provide diverse supervision
+2. **Natural language**: Captures nuanced visual concepts
+3. **Contrastive learning**: Efficient use of batch information
+4. **Zero-shot transfer**: No task-specific training needed
+
+## Applications
+
+CLIP powers:
+- **Image search**: Find images matching text queries
+- **DALL-E/Stable Diffusion**: Guide image generation
+- **Open-vocabulary detection**: Detect objects by name
+- **Multimodal models**: Visual understanding in LLMs
+
+## Limitations
+
+- Struggles with fine-grained recognition
+- Biases from internet data
+- Text encoder limits complex reasoning
+- Counting and spatial relationships remain challenging

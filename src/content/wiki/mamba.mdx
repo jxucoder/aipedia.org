@@ -1,0 +1,111 @@
+---
+title: "Mamba: State Space Models"
+description: "Linear-time sequence modeling as an efficient alternative to Transformers"
+date: 2026-02-01
+tags: ["deep-learning", "architecture", "sequence-modeling", "efficiency"]
+---
+
+import { MambaViz } from '../../components/viz/MambaViz';
+
+**Mamba** is a state space model (SSM) architecture that achieves Transformer-quality performance with linear complexity in sequence length. It's emerging as a compelling alternative for long-context applications.
+
+## The Transformer Bottleneck
+
+Self-attention has quadratic complexity:
+
+$$
+O(n^2 \cdot d)
+$$
+
+For a 100k token sequence, this becomes prohibitively expensive. Mamba achieves:
+
+$$
+O(n \cdot d)
+$$
+
+## State Space Models
+
+SSMs model sequences through a continuous latent state:
+
+$$
+h'(t) = Ah(t) + Bx(t)
+$$
+$$
+y(t) = Ch(t)
+$$
+
+- $h(t) \in \mathbb{R}^N$: Hidden state
+- $A \in \mathbb{R}^{N \times N}$: State matrix
+- $B, C$: Input/output projections
+
+## Discretization
+
+For discrete sequences, we discretize with step size $\Delta$:
+
+$$
+\bar{A} = \exp(\Delta A), \quad \bar{B} = (\Delta A)^{-1}(\exp(\Delta A) - I) \cdot \Delta B
+$$
+
+This gives the recurrence:
+
+$$
+h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad y_t = C h_t
+$$
+
+## The Selective State Space
+
+Mamba's key innovation: **input-dependent parameters**:
+
+$$
+B_t = f_B(x_t), \quad C_t = f_C(x_t), \quad \Delta_t = f_\Delta(x_t)
+$$
+
+This allows the model to selectively propagate or forget information based on content—similar to gating in LSTMs.
+
+## Interactive Visualization
+
+Compare Mamba's linear scaling with Transformer's quadratic growth:
+
+<MambaViz client:load />
+
+## Architecture
+
+A Mamba block contains:
+1. **Linear projection**: Expand input dimension
+2. **Convolution**: Local context mixing
+3. **SSM**: Selective state space layer
+4. **Gating**: Multiplicative interaction
+5. **Linear projection**: Back to model dimension
+
+## Efficient Computation
+
+The recurrence can be computed in parallel via:
+- **Parallel scan**: $O(n)$ work, $O(\log n)$ depth
+- **Hardware-aware**: Fused CUDA kernels
+
+## Performance Comparison
+
+| Model | Sequence Length | Memory | Throughput |
+|-------|-----------------|--------|------------|
+| Transformer | 2k optimal | $O(n^2)$ | Baseline |
+| Mamba | 1M+ possible | $O(n)$ | 3-5× faster |
+
+## Key Properties
+
+**Advantages:**
+- Linear-time inference
+- Constant memory per token in generation
+- Strong performance on long-range tasks
+
+**Trade-offs:**
+- Less mature ecosystem than Transformers
+- Some tasks still favor attention
+- Hybrid architectures may be optimal
+
+## Applications
+
+Mamba shows promise for:
+- Long-document understanding
+- Genomics and DNA modeling
+- Audio generation
+- Efficient edge deployment
