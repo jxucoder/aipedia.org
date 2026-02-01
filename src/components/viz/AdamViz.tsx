@@ -4,19 +4,20 @@ import { motion } from 'framer-motion';
 type Point = { x: number; y: number };
 type Optimizer = 'sgd' | 'momentum' | 'adam';
 
-// Beale's function (classic optimization test)
+// Elongated quadratic loss function centered at GOAL (3, 0.5)
+// f(x, y) = 0.1*(x-3)² + 0.5*(y-0.5)² - elongated along x-axis
+const GOAL: Point = { x: 3, y: 0.5 };
+
 function lossFunction(x: number, y: number): number {
-  const term1 = Math.pow(1.5 - x + x * y, 2);
-  const term2 = Math.pow(2.25 - x + x * y * y, 2);
-  const term3 = Math.pow(2.625 - x + x * y * y * y, 2);
-  return (term1 + term2 + term3) * 0.01;
+  const dx = x - GOAL.x;
+  const dy = y - GOAL.y;
+  return 0.1 * dx * dx + 0.5 * dy * dy;
 }
 
 function gradient(x: number, y: number): [number, number] {
-  const h = 0.0001;
-  const dx = (lossFunction(x + h, y) - lossFunction(x - h, y)) / (2 * h);
-  const dy = (lossFunction(x, y + h) - lossFunction(x, y - h)) / (2 * h);
-  return [dx, dy];
+  const dx = x - GOAL.x;
+  const dy = y - GOAL.y;
+  return [0.2 * dx, 1.0 * dy];
 }
 
 function optimizerStep(
@@ -35,8 +36,8 @@ function optimizerStep(
   switch (optimizer) {
     case 'sgd':
       newPos = {
-        x: pos.x - lr * gx * 10,
-        y: pos.y - lr * gy * 10,
+        x: pos.x - lr * gx,
+        y: pos.y - lr * gy,
       };
       break;
 
@@ -46,23 +47,20 @@ function optimizerStep(
         y: 0.9 * state.vMom.y + gy,
       };
       newPos = {
-        x: pos.x - lr * newState.vMom.x * 5,
-        y: pos.y - lr * newState.vMom.y * 5,
+        x: pos.x - lr * newState.vMom.x,
+        y: pos.y - lr * newState.vMom.y,
       };
       break;
 
     case 'adam':
-      // Update biased first moment estimate
       newState.m = {
         x: beta1 * state.m.x + (1 - beta1) * gx,
         y: beta1 * state.m.y + (1 - beta1) * gy,
       };
-      // Update biased second moment estimate
       newState.v = {
         x: beta2 * state.v.x + (1 - beta2) * gx * gx,
         y: beta2 * state.v.y + (1 - beta2) * gy * gy,
       };
-      // Bias correction
       const mHat = {
         x: newState.m.x / (1 - Math.pow(beta1, newState.t)),
         y: newState.m.y / (1 - Math.pow(beta1, newState.t)),
@@ -72,8 +70,8 @@ function optimizerStep(
         y: newState.v.y / (1 - Math.pow(beta2, newState.t)),
       };
       newPos = {
-        x: pos.x - (lr * mHat.x) / (Math.sqrt(vHat.x) + eps) * 2,
-        y: pos.y - (lr * mHat.y) / (Math.sqrt(vHat.y) + eps) * 2,
+        x: pos.x - (lr * mHat.x) / (Math.sqrt(vHat.x) + eps),
+        y: pos.y - (lr * mHat.y) / (Math.sqrt(vHat.y) + eps),
       };
       break;
   }
@@ -88,7 +86,6 @@ const COLORS: Record<Optimizer, string> = {
 };
 
 const INITIAL_POS: Point = { x: -1.5, y: 1.5 };
-const GOAL: Point = { x: 3, y: 0.5 };
 
 export function AdamViz() {
   const [isRunning, setIsRunning] = useState(false);
