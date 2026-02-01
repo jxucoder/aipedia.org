@@ -1,0 +1,185 @@
+---
+title: "Sequence to Sequence Learning"
+description: "Encoder-decoder architecture for mapping sequences to sequences"
+date: 2026-02-01
+tags: ["architecture", "deep-learning", "nlp", "encoder-decoder", "seq2seq", "rnn"]
+---
+
+import { Seq2SeqViz } from '../../components/viz/Seq2SeqViz';
+
+**Sequence-to-Sequence** (Seq2Seq), introduced by Sutskever et al. at Google in 2014, established the encoder-decoder paradigm for mapping variable-length input sequences to variable-length output sequences. It enabled neural machine translation and became the foundation for modern language models.
+
+## The Problem
+
+Traditional neural networks require fixed-size inputs and outputs. But many tasks have variable lengths:
+- Translation: "Hello" (1 word) → "Bonjour" (1 word)
+- Translation: "How are you?" (3 words) → "Comment allez-vous?" (2 words)
+
+## The Solution: Encoder-Decoder
+
+Split the problem into two parts:
+
+1. **Encoder**: Read the entire input sequence, compress into a fixed-size vector (the "thought vector" or "context")
+2. **Decoder**: Generate the output sequence from this context vector
+
+$$
+\text{Input} \xrightarrow{\text{Encoder}} \mathbf{c} \xrightarrow{\text{Decoder}} \text{Output}
+$$
+
+## Interactive Demo
+
+Watch how Seq2Seq encodes a sentence and decodes its translation:
+
+<Seq2SeqViz client:load />
+
+## The Architecture
+
+### Encoder (LSTM)
+
+Processes input sequence $x_1, x_2, ..., x_T$:
+
+$$
+h_t = \text{LSTM}(x_t, h_{t-1})
+$$
+
+The final hidden state $h_T$ becomes the context vector $\mathbf{c}$.
+
+### Decoder (LSTM)
+
+Generates output sequence $y_1, y_2, ..., y_{T'}$:
+
+$$
+s_t = \text{LSTM}(y_{t-1}, s_{t-1})
+$$
+
+$$
+P(y_t | y_{<t}, \mathbf{c}) = \text{softmax}(W_s \cdot s_t)
+$$
+
+The decoder is initialized with $s_0 = \mathbf{c}$.
+
+## Key Innovations
+
+### 1. Reversing Input Sequence
+
+Reversing the source sentence improved translation significantly:
+
+```
+Original: "A B C" → "X Y Z"
+Reversed: "C B A" → "X Y Z"
+```
+
+This brings corresponding words closer in terms of RNN distance.
+
+### 2. Deep LSTMs
+
+Using 4-layer LSTMs significantly outperformed shallow networks:
+
+| Depth | BLEU Score |
+|-------|------------|
+| 1 layer | 25.9 |
+| 2 layers | 29.6 |
+| 4 layers | 34.8 |
+
+### 3. Beam Search Decoding
+
+Instead of greedy decoding (taking the most likely word at each step), keep the top-k candidates:
+
+```
+Beam size = 3:
+Step 1: [The, A, This]
+Step 2: [The cat, The dog, A cat, ...]
+...select top 3 sequences by total probability
+```
+
+## Training
+
+Teacher forcing during training:
+
+$$
+\mathcal{L} = -\sum_{t=1}^{T'} \log P(y_t^* | y_1^*, ..., y_{t-1}^*, \mathbf{c})
+$$
+
+Use the ground-truth previous token $y_{t-1}^*$ rather than the model's prediction.
+
+## The Bottleneck Problem
+
+The fixed-size context vector $\mathbf{c}$ must encode the entire input:
+
+- Works well for short sequences
+- Degrades for long sequences (information compression)
+- Led to the invention of **attention mechanisms**
+
+## From Seq2Seq to Attention
+
+The limitation of a single context vector motivated Bahdanau attention (2014):
+
+$$
+\mathbf{c}_t = \sum_i \alpha_{ti} h_i
+$$
+
+Each decoder step attends to different parts of the encoder output, solving the bottleneck.
+
+## Applications
+
+Seq2Seq enabled:
+
+| Task | Input | Output |
+|------|-------|--------|
+| Translation | "Hello world" | "Bonjour le monde" |
+| Summarization | Long article | Short summary |
+| Dialogue | User message | Response |
+| Code generation | Description | Code |
+| Speech recognition | Audio features | Text |
+
+## Evolution
+
+| Year | Model | Innovation |
+|------|-------|------------|
+| 2014 | Seq2Seq | Encoder-decoder RNNs |
+| 2014 | Bahdanau | Attention mechanism |
+| 2015 | Luong | Simplified attention variants |
+| 2017 | Transformer | Self-attention, no recurrence |
+| 2018+ | BERT, GPT | Pre-trained transformers |
+
+## Why It Mattered
+
+Seq2Seq established:
+- **End-to-end learning**: No hand-crafted features or alignment
+- **Encoder-decoder paradigm**: Used by transformers today
+- **Variable-length I/O**: Fundamental for language tasks
+- **Transfer learning path**: Pre-trained encoders/decoders
+
+## Code Example
+
+```python
+class Seq2Seq(nn.Module):
+    def __init__(self, encoder, decoder):
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def forward(self, src, trg):
+        # Encode: get context from final hidden state
+        _, (hidden, cell) = self.encoder(src)
+
+        # Decode: generate output sequence
+        outputs = []
+        input = trg[0]  # <SOS> token
+        for t in range(1, len(trg)):
+            output, (hidden, cell) = self.decoder(input, hidden, cell)
+            outputs.append(output)
+            input = trg[t]  # Teacher forcing
+
+        return torch.stack(outputs)
+```
+
+## Key Papers
+
+- **Sequence to Sequence Learning with Neural Networks** – Sutskever et al., 2014  \
+  https://arxiv.org/abs/1409.3215
+- **Learning Phrase Representations using RNN Encoder-Decoder** – Cho et al., 2014  \
+  https://arxiv.org/abs/1406.1078
+- **Neural Machine Translation by Jointly Learning to Align and Translate** – Bahdanau et al., 2014  \
+  https://arxiv.org/abs/1409.0473
+- **Effective Approaches to Attention-based Neural Machine Translation** – Luong et al., 2015  \
+  https://arxiv.org/abs/1508.04025

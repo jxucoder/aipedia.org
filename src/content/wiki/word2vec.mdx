@@ -1,0 +1,126 @@
+---
+title: "Word2Vec: Word Embeddings"
+description: "Learning dense vector representations of words from text"
+date: 2026-02-01
+tags: ["nlp", "embeddings", "deep-learning", "representation-learning"]
+---
+
+import { Word2VecViz } from '../../components/viz/Word2VecViz';
+
+**Word2Vec**, introduced by Mikolov et al. at Google in 2013, revolutionized NLP by learning dense vector representations of words where semantic similarity corresponds to geometric proximity. The famous equation "king - man + woman = queen" demonstrated these vectors capture meaningful relationships.
+
+## The Key Insight
+
+Instead of one-hot vectors (sparse, no similarity), learn dense embeddings where:
+- Similar words are close: vec("cat") ≈ vec("dog")
+- Relationships are linear: vec("king") - vec("man") + vec("woman") ≈ vec("queen")
+
+## Two Architectures
+
+### Skip-gram
+
+Given a word, predict surrounding context words:
+
+$$
+P(w_{context} | w_{center}) = \frac{\exp(v_{w_c}^T v_{w_t})}{\sum_{w \in V} \exp(v_w^T v_{w_t})}
+$$
+
+**Objective**: Maximize probability of context words given center word.
+
+### CBOW (Continuous Bag of Words)
+
+Given context words, predict the center word:
+
+$$
+P(w_{center} | w_{context}) = \frac{\exp(v_{w_t}^T \bar{v}_{context})}{\sum_{w \in V} \exp(v_w^T \bar{v}_{context})}
+$$
+
+where $\bar{v}_{context}$ is the average of context word vectors.
+
+## Interactive Demo
+
+Explore word embeddings and vector arithmetic:
+
+<Word2VecViz client:load />
+
+## Training with Negative Sampling
+
+Computing the full softmax over vocabulary is expensive. **Negative sampling** approximates it:
+
+$$
+\log \sigma(v_{w_O}^T v_{w_I}) + \sum_{i=1}^{k} \mathbb{E}_{w_i \sim P_n(w)} [\log \sigma(-v_{w_i}^T v_{w_I})]
+$$
+
+Instead of normalizing over all words, contrast positive pairs against $k$ random negative samples.
+
+## The Training Process
+
+```
+Sentence: "The quick brown fox jumps"
+Window size: 2
+
+For center word "brown":
+  Positive pairs: (brown, quick), (brown, fox)
+  Negative samples: (brown, computer), (brown, elephant), ...
+
+Objective: Push positive pairs together, negative pairs apart
+```
+
+## Why Linear Relationships?
+
+The optimization objective creates a structure where:
+
+$$
+\vec{v}_{king} - \vec{v}_{man} \approx \vec{v}_{queen} - \vec{v}_{woman}
+$$
+
+This emerges because words appearing in similar contexts get similar vectors, and gender/royalty patterns are consistent across the corpus.
+
+## Hyperparameters
+
+| Parameter | Typical Value | Effect |
+|-----------|---------------|--------|
+| Embedding dimension | 100-300 | Higher = more capacity |
+| Window size | 5-10 | Larger = more syntactic |
+| Negative samples | 5-20 | More = better for rare words |
+| Min word count | 5 | Filter rare words |
+| Subsampling | 1e-3 to 1e-5 | Downsample frequent words |
+
+## Word2Vec vs. Later Methods
+
+| Method | Year | Key Difference |
+|--------|------|----------------|
+| **Word2Vec** | 2013 | Static embeddings, one vector per word |
+| **GloVe** | 2014 | Global co-occurrence statistics |
+| **FastText** | 2016 | Subword embeddings (handles OOV) |
+| **ELMo** | 2018 | Context-dependent embeddings |
+| **BERT** | 2018 | Deep bidirectional context |
+
+## Limitations
+
+1. **One vector per word**: "bank" (river) = "bank" (financial)
+2. **No morphology**: "run", "running", "runs" are unrelated
+3. **Fixed vocabulary**: Out-of-vocabulary words get no embedding
+4. **Shallow context**: Just neighboring words, not deep semantics
+
+These limitations led to contextual embeddings (ELMo, BERT).
+
+## Historical Impact
+
+Word2Vec:
+- Made NLP research accessible (fast to train)
+- Introduced the embedding paradigm
+- Enabled transfer learning in NLP
+- Demonstrated emergent structure in learned representations
+- Inspired similar approaches for graphs, products, etc.
+
+## Key Papers
+
+- **Efficient Estimation of Word Representations in Vector Space** – Mikolov et al., 2013  \
+  https://arxiv.org/abs/1301.3781
+- **Distributed Representations of Words and Phrases and their Compositionality** – Mikolov et al., 2013  \
+  https://arxiv.org/abs/1310.4546
+- **GloVe: Global Vectors for Word Representation** – Pennington et al., 2014  \
+  https://nlp.stanford.edu/pubs/glove.pdf
+- **Enriching Word Vectors with Subword Information** (FastText) – Bojanowski et al., 2016  \
+  https://arxiv.org/abs/1607.04606

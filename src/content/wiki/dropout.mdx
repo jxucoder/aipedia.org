@@ -1,0 +1,145 @@
+---
+title: "Dropout: Regularization for Neural Networks"
+description: "Randomly dropping units during training to prevent overfitting"
+date: 2026-02-01
+tags: ["deep-learning", "training", "regularization", "optimization"]
+---
+
+import { DropoutViz } from '../../components/viz/DropoutViz';
+
+**Dropout**, introduced by Hinton et al. in 2012 and formalized by Srivastava et al. in 2014, is a simple yet powerful regularization technique. During training, randomly "drop" (zero out) neurons with probability $p$. This prevents co-adaptation and dramatically reduces overfitting.
+
+## The Problem: Overfitting
+
+Deep networks have millions of parameters and easily memorize training data. Traditional regularization (L2) wasn't enough for very deep networks.
+
+## The Solution: Random Dropout
+
+During each training forward pass, randomly set each neuron's output to zero with probability $p$:
+
+$$
+\tilde{h}_i = \begin{cases}
+0 & \text{with probability } p \\
+h_i & \text{with probability } 1-p
+\end{cases}
+$$
+
+Typically $p = 0.5$ for hidden layers, $p = 0.2$ for input layers.
+
+## Interactive Demo
+
+Visualize dropout in action across training iterations:
+
+<DropoutViz client:load />
+
+## Training vs. Inference
+
+**Training**: Randomly drop neurons with probability $p$
+
+**Inference**: Use all neurons but scale by $(1-p)$:
+
+$$
+h_{test} = (1-p) \cdot h
+$$
+
+Or equivalently, scale during training (inverted dropout):
+
+$$
+h_{train} = \frac{h}{1-p} \cdot \text{mask}
+$$
+
+This ensures expected values match between training and inference.
+
+## Why Dropout Works
+
+### 1. Ensemble Effect
+Each dropout mask creates a different "sub-network." Training with dropout is like training an ensemble of $2^n$ networks (where $n$ is the number of neurons), then averaging their predictions.
+
+### 2. Prevents Co-adaptation
+Without dropout, neurons can become overly dependent on specific other neurons. Dropout forces each neuron to be useful independently.
+
+### 3. Sparse Representations
+Neurons must be robust to missing peers, encouraging more distributed, sparse representations.
+
+## The Algorithm
+
+```python
+def dropout_forward(x, p=0.5, training=True):
+    if training:
+        # Create binary mask
+        mask = (torch.rand_like(x) > p).float()
+        # Apply mask and scale (inverted dropout)
+        return x * mask / (1 - p)
+    else:
+        # No dropout at inference
+        return x
+```
+
+## Dropout Variations
+
+| Variant | Description |
+|---------|-------------|
+| **Standard Dropout** | Drop individual neurons |
+| **DropConnect** | Drop individual weights instead |
+| **Spatial Dropout** | Drop entire feature maps (for CNNs) |
+| **DropBlock** | Drop contiguous regions in feature maps |
+| **Attention Dropout** | Drop attention weights in transformers |
+
+## Typical Dropout Rates
+
+| Layer Type | Recommended Rate |
+|------------|-----------------|
+| Input layer | 0.1 - 0.2 |
+| Hidden layers | 0.4 - 0.5 |
+| Convolutional layers | 0.2 - 0.3 |
+| Before final layer | 0.5 |
+
+## Mathematical Interpretation
+
+Dropout can be viewed as:
+
+1. **Approximate Bayesian inference**: Implicitly learning a distribution over weights
+2. **Data augmentation**: Each example is seen with different network architectures
+3. **Noise injection**: Adding multiplicative Bernoulli noise to hidden units
+
+## Dropout + BatchNorm
+
+There's a subtle interaction: BatchNorm's statistics change when dropout is applied. Common practices:
+- Apply dropout after BatchNorm
+- Use lower dropout rates with BatchNorm
+- Some architectures skip dropout entirely when using BatchNorm
+
+## When Not to Use Dropout
+
+1. **Small datasets**: May need even stronger regularization
+2. **BatchNorm-heavy architectures**: BatchNorm already provides regularization
+3. **At inference time**: Always disabled
+4. **LSTMs/RNNs**: Use variational dropout (same mask across time steps)
+
+## Impact on Training
+
+| Aspect | Without Dropout | With Dropout |
+|--------|----------------|--------------|
+| Training loss | Lower | Higher |
+| Validation loss | Often higher (overfit) | Lower |
+| Training time | Faster per epoch | Slower convergence |
+| Generalization | Poor | Better |
+
+## Historical Impact
+
+Dropout was transformative:
+- Enabled training of much deeper networks
+- Became standard in AlexNet (2012 ImageNet winner)
+- Reduced reliance on hand-designed regularization
+- Inspired numerous variants and theoretical analysis
+
+## Key Papers
+
+- **Improving neural networks by preventing co-adaptation of feature detectors** – Hinton et al., 2012  \
+  https://arxiv.org/abs/1207.0580
+- **Dropout: A Simple Way to Prevent Neural Networks from Overfitting** – Srivastava et al., 2014  \
+  https://jmlr.org/papers/v15/srivastava14a.html
+- **Dropout as a Bayesian Approximation** – Gal & Ghahramani, 2016  \
+  https://arxiv.org/abs/1506.02142
+- **DropBlock: A regularization technique for convolutional networks** – Ghiasi et al., 2018  \
+  https://arxiv.org/abs/1810.12890

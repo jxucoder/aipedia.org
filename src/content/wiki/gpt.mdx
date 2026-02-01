@@ -1,0 +1,133 @@
+---
+title: "GPT: Generative Pre-Training"
+description: "Autoregressive language models that learn to predict the next token"
+date: 2026-02-01
+tags: ["architecture", "transformer", "deep-learning", "nlp", "pre-training", "generative"]
+---
+
+import { GPTViz } from '../../components/viz/GPTViz';
+
+**GPT** (Generative Pre-trained Transformer) introduced the paradigm of large-scale autoregressive language modeling. Starting with GPT-1 (2018) from OpenAI, the series demonstrated that scaling transformer decoders creates increasingly capable general-purpose models.
+
+## Core Idea: Next Token Prediction
+
+GPT models learn to predict the next token given all previous tokens:
+
+$$
+P(x_1, x_2, ..., x_n) = \prod_{i=1}^{n} P(x_i | x_1, ..., x_{i-1})
+$$
+
+This simple objective—predicting what comes next—turns out to encode rich understanding of language, facts, and reasoning.
+
+## The Architecture
+
+GPT uses the **Transformer decoder** with causal (masked) self-attention:
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V
+$$
+
+where $M$ is a causal mask preventing attention to future tokens.
+
+| Model | Year | Parameters | Context | Training Data |
+|-------|------|------------|---------|---------------|
+| GPT-1 | 2018 | 117M | 512 | BookCorpus |
+| GPT-2 | 2019 | 1.5B | 1024 | WebText (40GB) |
+| GPT-3 | 2020 | 175B | 2048 | 570GB filtered |
+| GPT-4 | 2023 | ~1.7T* | 8K-128K | Unknown |
+
+*Estimated, not officially disclosed
+
+## Interactive Demo
+
+Explore autoregressive generation and causal attention:
+
+<GPTViz client:load />
+
+## GPT-2: The Scaling Revelation
+
+GPT-2 demonstrated **emergent capabilities** from scale:
+
+- Zero-shot task performance without fine-tuning
+- Coherent long-form text generation
+- Basic reasoning and arithmetic
+- Translation and summarization (without training for it)
+
+The paper's key insight: "Language models are unsupervised multitask learners."
+
+## GPT-3: In-Context Learning
+
+GPT-3 introduced **few-shot prompting**:
+
+```
+Translate English to French:
+sea otter => loutre de mer
+peppermint => menthe poivrée
+cheese =>
+```
+
+The model learns new tasks from examples in the prompt, without gradient updates. This emerged purely from scale.
+
+## Training Objective
+
+Standard language modeling loss:
+
+$$
+\mathcal{L} = -\sum_{i=1}^{n} \log P(x_i | x_1, ..., x_{i-1}; \theta)
+$$
+
+GPT-3 additionally uses:
+- Sparse attention patterns for efficiency
+- Model parallelism across many GPUs
+- Careful data deduplication
+
+## Why Decoder-Only?
+
+BERT uses encoders (bidirectional), GPT uses decoders (causal). Why?
+
+| Aspect | Encoder (BERT) | Decoder (GPT) |
+|--------|---------------|---------------|
+| Training | Masked LM | Next token |
+| Generation | Cannot generate | Natural generation |
+| Understanding | Both directions | Left context only |
+| Use case | Classification, QA | Generation, chat |
+
+Modern LLMs (GPT-4, Claude) use decoder-only architectures because generation is the primary interface.
+
+## Scaling Laws
+
+GPT-3 revealed predictable scaling:
+
+$$
+L(N) \approx \left(\frac{N_c}{N}\right)^{\alpha_N}
+$$
+
+Loss decreases as a power law with model size $N$, data size $D$, and compute $C$.
+
+## From GPT to ChatGPT
+
+The path to conversational AI:
+1. **GPT-3**: Raw language model
+2. **InstructGPT**: Fine-tuned to follow instructions (RLHF)
+3. **ChatGPT**: Optimized for dialogue
+
+RLHF (Reinforcement Learning from Human Feedback) aligns the model with human preferences.
+
+## Historical Impact
+
+GPT established:
+- **Scaling hypothesis**: Bigger models → better capabilities
+- **Emergent abilities**: Capabilities appearing at scale
+- **Prompt engineering**: Programming via natural language
+- **Foundation models**: One model, many tasks
+
+## Key Papers
+
+- **Improving Language Understanding by Generative Pre-Training** – Radford et al., 2018  \
+  https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
+- **Language Models are Unsupervised Multitask Learners** (GPT-2) – Radford et al., 2019  \
+  https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
+- **Language Models are Few-Shot Learners** (GPT-3) – Brown et al., 2020  \
+  https://arxiv.org/abs/2005.14165
+- **Training language models to follow instructions with human feedback** (InstructGPT) – Ouyang et al., 2022  \
+  https://arxiv.org/abs/2203.02155

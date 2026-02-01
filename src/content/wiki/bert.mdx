@@ -1,0 +1,107 @@
+---
+title: "BERT: Bidirectional Transformers"
+description: "Pre-training deep bidirectional representations for NLP"
+date: 2026-02-01
+tags: ["architecture", "transformer", "deep-learning", "nlp", "pre-training"]
+---
+
+import { BERTViz } from '../../components/viz/BERTViz';
+
+**BERT** (Bidirectional Encoder Representations from Transformers) revolutionized NLP by introducing deep bidirectional pre-training. Published by Devlin et al. at Google in 2018, it achieved state-of-the-art results on 11 NLP tasks and became one of the most cited AI papers ever.
+
+## The Key Insight
+
+Previous language models were either left-to-right (GPT) or used shallow concatenation of left-to-right and right-to-left models (ELMo). BERT's breakthrough: **mask tokens and predict them using both left and right context simultaneously**.
+
+$$
+P(w_i | w_1, ..., w_{i-1}, w_{i+1}, ..., w_n)
+$$
+
+This bidirectional conditioning allows each token to "see" the entire sentence when building its representation.
+
+## Pre-training Objectives
+
+### 1. Masked Language Modeling (MLM)
+
+Randomly mask 15% of tokens and predict them:
+
+- 80% replaced with `[MASK]`
+- 10% replaced with random token
+- 10% unchanged
+
+$$
+\mathcal{L}_{MLM} = -\sum_{i \in \text{masked}} \log P(w_i | \mathbf{h}_i)
+$$
+
+### 2. Next Sentence Prediction (NSP)
+
+Given sentence A and B, predict if B follows A:
+
+```
+[CLS] The cat sat on the mat [SEP] It was comfortable [SEP]
+Label: IsNext
+```
+
+## Architecture
+
+BERT uses the **Transformer encoder** (no decoder):
+
+| Model | Layers | Hidden | Heads | Parameters |
+|-------|--------|--------|-------|------------|
+| BERT-Base | 12 | 768 | 12 | 110M |
+| BERT-Large | 24 | 1024 | 16 | 340M |
+
+## Interactive Demo
+
+Explore how BERT processes tokens bidirectionally and learns masked predictions:
+
+<BERTViz client:load />
+
+## Input Representation
+
+BERT's input combines three embeddings:
+
+$$
+\text{Input} = \text{Token Emb} + \text{Segment Emb} + \text{Position Emb}
+$$
+
+- **Token embeddings**: WordPiece vocabulary (30K tokens)
+- **Segment embeddings**: Distinguish sentence A vs B
+- **Position embeddings**: Learned (not sinusoidal)
+
+## Fine-tuning
+
+BERT popularized the "pre-train then fine-tune" paradigm:
+
+1. **Pre-train** on massive unlabeled text (BooksCorpus + Wikipedia)
+2. **Fine-tune** on task-specific labeled data
+
+Fine-tuning adds a simple output layer:
+- **Classification**: Use `[CLS]` representation
+- **Token tagging**: Use each token's representation
+- **QA**: Predict start/end span positions
+
+## Why It Works
+
+1. **Bidirectional context**: Every token sees full sentence
+2. **Deep representations**: 12-24 transformer layers
+3. **Transfer learning**: Pre-trained knowledge transfers to many tasks
+4. **Attention patterns**: Learns syntactic and semantic relationships
+
+## Historical Impact
+
+BERT sparked the "BERT-ology" era:
+- **RoBERTa**: Better training recipe (no NSP, more data)
+- **ALBERT**: Parameter sharing for efficiency
+- **DistilBERT**: Knowledge distillation (40% smaller, 60% faster)
+- **SpanBERT**: Span masking for better representations
+- **ELECTRA**: Replaced token detection instead of masking
+
+## Key Papers
+
+- **BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding** – Devlin et al., 2018  \
+  https://arxiv.org/abs/1810.04805
+- **RoBERTa: A Robustly Optimized BERT Pretraining Approach** – Liu et al., 2019  \
+  https://arxiv.org/abs/1907.11692
+- **ALBERT: A Lite BERT** – Lan et al., 2019  \
+  https://arxiv.org/abs/1909.11942
