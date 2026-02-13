@@ -1,0 +1,128 @@
+---
+title: "Maximum Likelihood Reinforcement Learning (MaxRL)"
+description: "A framework that bridges reinforcement learning and maximum likelihood estimation for sampling-based tasks with binary feedback"
+date: 2026-02-13
+tags: ["deep-learning", "reinforcement-learning", "optimization", "policy-gradient"]
+---
+
+import { MaxLikelihoodRLViz } from '../../components/viz/MaxLikelihoodRLViz';
+
+**Maximum Likelihood Reinforcement Learning (MaxRL)** is a framework that reveals a fundamental gap between standard RL objectives and maximum likelihood estimation, then closes it. The key observation: in tasks with binary outcome feedback (pass/fail), standard RL algorithms like REINFORCE and GRPO only optimize a first-order approximation of the true maximum likelihood objective. MaxRL defines a family of objectives that smoothly interpolate between RL and exact maximum likelihood as more sampling compute is allocated.
+
+## Motivation
+
+In sampling-based tasks such as code generation and mathematical problem solving, a model $\pi_\theta$ implicitly defines a probability of producing a correct answer:
+
+$$
+p_\theta(x) = \sum_y \pi_\theta(y \mid x) \cdot \mathbb{1}[\text{correct}(y, x)]
+$$
+
+The natural training objective is **maximum likelihood**: maximize $\log p_\theta(x)$ over the training prompts. But because sampling is non-differentiable, practitioners instead use RL surrogates like REINFORCE or GRPO. MaxRL shows these surrogates are suboptimal approximations and provides a principled way to do better.
+
+## The Core Insight
+
+The maximum likelihood objective admits a **Maclaurin expansion** in terms of failure probabilities:
+
+$$
+\log p = -\sum_{k=1}^{\infty} \frac{(1-p)^k}{k} = -\sum_{k=1}^{\infty} \frac{\text{fail@}k}{k}
+$$
+
+where $\text{fail@}k = (1-p)^k$ is the probability that all $k$ independent samples from the model fail.
+
+Differentiating gives the **gradient identity**:
+
+$$
+\nabla_\theta \log p_\theta = \sum_{k=1}^{\infty} \frac{1}{k} \nabla_\theta \text{pass@}k
+$$
+
+Standard RL (REINFORCE) corresponds to optimizing only the **first term** ($k=1$) of this infinite series. MaxRL captures higher-order terms, which are critical when $p$ is small — exactly the hard problems where learning matters most.
+
+## Interactive Visualization
+
+Explore how the truncated Maclaurin expansion approximates $\log(p)$ at different orders. Notice how the K=1 approximation (standard RL) diverges sharply from $\log(p)$ at low pass rates:
+
+<MaxLikelihoodRLViz client:load />
+
+## The MaxRL Objective
+
+MaxRL defines a compute-indexed family of objectives parameterized by the number of samples $K$:
+
+$$
+J_{\text{MaxRL}}^{(K)}(\theta) = -\sum_{k=1}^{K} \frac{(1 - p_\theta)^k}{k}
+$$
+
+This family has two key properties:
+
+1. **At $K=1$**: Recovers the standard RL objective (REINFORCE / pass@1 gradient)
+2. **As $K \to \infty$**: Converges to exact maximum likelihood $\log p_\theta$
+
+The gradient of each term can be estimated via policy gradient using $k$ independent rollouts:
+
+$$
+\nabla_\theta \text{pass@}k = k \cdot \mathbb{E}\left[\mathbb{1}[\text{correct}(y_1)] \prod_{j=2}^{k} (1 - \mathbb{1}[\text{correct}(y_j)]) \cdot \nabla_\theta \log \pi_\theta(y_1 \mid x)\right]
+$$
+
+## Implementation
+
+A remarkable property of MaxRL is its simplicity. The practical implementation requires only a **single line change** to standard RL: dividing by the mean reward in the advantage computation.
+
+```python
+# Standard GRPO advantage
+advantage = (reward - baseline) / std
+
+# MaxRL advantage — divide by mean reward (pass rate estimate)
+mean_reward = reward.mean()  # estimate of p (pass rate)
+advantage = (reward - baseline) / (std * mean_reward)
+```
+
+This division by mean reward naturally up-weights gradients on hard prompts (low $p$) and down-weights easy prompts (high $p$), matching the structure of the ML gradient.
+
+## Why It Works: Gradient Analysis
+
+The division by pass rate creates a reweighting that aligns with the ML gradient:
+
+| Pass rate $p$ | RL gradient scale | MaxRL gradient scale | Effect |
+|---------------|-------------------|----------------------|--------|
+| High (e.g. 0.9) | $\sim 1$ | $\sim 1/0.9 \approx 1.1$ | Similar |
+| Medium (e.g. 0.5) | $\sim 1$ | $\sim 1/0.5 = 2$ | 2x boost |
+| Low (e.g. 0.05) | $\sim 1$ | $\sim 1/0.05 = 20$ | 20x boost |
+
+Standard RL treats all prompts roughly equally. MaxRL concentrates learning on the prompts the model finds hardest — where improvement has the largest impact on overall likelihood.
+
+## Key Results
+
+MaxRL was evaluated on mathematical reasoning benchmarks using Qwen2.5 models:
+
+- **Pareto-dominates GRPO** across all benchmarks, achieving equal or better Pass@1 while significantly improving Pass@K
+- **7.9x to 19.2x test-time scaling efficiency** gains compared to GRPO-trained models
+- **Convergence to ML**: With sufficient rollouts, MaxRL closely matches cross-entropy (supervised) training, while REINFORCE fails to progress from low initial pass rates
+- **Resistance to overfitting**: MaxRL sustains improvement over many epochs with less Pass@K degradation
+- **Stronger gradients on hard prompts**: Produces larger gradient norms on prompts with near-zero pass rates, concentrating signal where it matters
+
+## Connection to Prior Work
+
+MaxRL relates to several threads in the RL and LLM training literature:
+
+| Method | Relationship |
+|--------|-------------|
+| REINFORCE | First-order term ($K=1$) of MaxRL |
+| GRPO | Variant of REINFORCE with group-relative baselines |
+| Rejection sampling fine-tuning | Filters for correct samples; MaxRL reweights continuously |
+| Expert iteration | Iterative rejection sampling; MaxRL provides the continuous relaxation |
+| ReST / STaR | Iterative distillation from correct samples |
+
+## When MaxRL Matters Most
+
+MaxRL provides the largest gains when:
+
+1. **Pass rates are low**: The gap between RL and ML is largest for hard problems
+2. **Test-time compute scaling is used**: Higher Pass@K directly benefits from MaxRL's ML alignment
+3. **Training is compute-rich**: More rollouts per prompt allow MaxRL to capture higher-order terms
+4. **Binary feedback**: The framework assumes pass/fail outcomes (code correctness, math verification)
+
+## Key Papers
+
+- **Maximum Likelihood Reinforcement Learning** — Tajwar, Zeng, Zhou, Song, Arora, Jiang, Schneider, Salakhutdinov, Feng, Zanette, 2026
+  https://arxiv.org/abs/2602.02710
+- **Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning (REINFORCE)** — Williams, 1992
+- **GRPO: Group Relative Policy Optimization** — Shao et al., 2024
