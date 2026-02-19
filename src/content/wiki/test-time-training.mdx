@@ -1,106 +1,98 @@
 ---
-title: "Learning to (Learn at Test Time): RNNs with Expressive Hidden States"
-description: "Test-Time Training layers that use self-supervised learning as the hidden state update rule for linear-complexity sequence modeling"
+title: "Test-Time Training with Self-Supervision for Generalization under Distribution Shifts"
+description: "Adapting model parameters at test time using self-supervised learning on unlabeled test samples to handle distribution shifts"
 date: 2026-02-19
-tags: ["architecture", "sequence-modeling", "deep-learning", "efficiency"]
+tags: ["robustness", "self-supervised-learning", "deep-learning", "distribution-shift"]
 ---
 
-**Test-Time Training (TTT)** layers are a family of sequence modeling layers introduced by Sun et al. (2024) that replace the fixed hidden state of traditional RNNs with a machine learning model that is updated via self-supervised learning — even at test time. This gives RNN-like architectures expressive hidden states while maintaining linear complexity in sequence length.
+**Test-Time Training (TTT)** is a method introduced by Sun et al. (2020) that adapts a model's parameters at test time using self-supervised learning on the unlabeled test sample itself. The key insight: even without labels, a single test input carries information about the distribution it came from, and the model can exploit this via a self-supervised objective before making its prediction.
 
 ## The Problem
 
-Transformers achieve strong performance through self-attention, but at $O(n^2)$ cost. Modern RNNs like Mamba restore linear complexity but compress all context into a fixed-size hidden state, which limits expressiveness — particularly for long contexts.
-
-TTT layers offer a middle path: linear complexity with a hidden state that grows in representational power as it processes more tokens.
+Standard supervised learning assumes training and test data come from the same distribution. In practice, test data often differs — corrupted images, new environments, sensor drift. Existing approaches like domain adaptation require knowing the type of shift in advance. TTT makes no such assumption.
 
 ## Core Idea
 
-In a standard RNN, the hidden state $s_t$ is updated by a fixed rule:
+The model is trained jointly on a main task (e.g., image classification) and a self-supervised auxiliary task (e.g., predicting image rotation). At test time, the self-supervised loss is used to update the model's shared feature extractor on each test sample before making a prediction.
+
+The unlabeled test sample $x$ gives a hint about its distribution. TTT exploits this hint by allowing model parameters $\theta$ to depend on $x$, without needing its unknown label $y$.
+
+## Architecture
+
+TTT uses a **Y-shaped architecture** with three components:
+
+- **Shared feature extractor** $\theta_e$ — the bottom of the Y
+- **Main task head** $\theta_m$ — one branch (e.g., image classifier)
+- **Self-supervised head** $\theta_s$ — the other branch (e.g., rotation predictor)
+
+The two branches share the feature extractor. This is critical: updating $\theta_e$ on the self-supervised loss at test time improves the features used by the main task.
+
+## Self-Supervised Task
+
+The paper uses **rotation prediction** as the auxiliary task. An input image is rotated by one of $\{0°, 90°, 180°, 270°\}$, and the model predicts the rotation angle as a four-way classification problem.
+
+This task is simple, requires no labels, and encourages features that capture object structure — features that transfer well to the main task.
+
+## Training Phase
+
+During training, both losses are jointly optimized in a multi-task fashion:
 
 $$
-s_t = f(s_{t-1}, x_t)
+\min_{\theta_e, \theta_m, \theta_s} \; \mathbb{E}_{(x,y) \sim P_{\text{train}}} \left[ \ell_m(\theta_m, \theta_e; x, y) + \lambda \, \ell_s(\theta_s, \theta_e; x) \right]
 $$
 
-In TTT layers, the hidden state **is itself a model** $W_t$ (e.g., a linear model or MLP), and the update rule is a gradient step on a self-supervised loss:
+where $\ell_m$ is the main task loss, $\ell_s$ is the self-supervised loss, and $\lambda$ balances the two.
+
+## Test-Time Adaptation
+
+When a test sample arrives:
+
+1. **Initialize** from the jointly trained parameters
+2. **Update** the shared feature extractor $\theta_e$ by minimizing the self-supervised loss on the test sample (typically ~10 gradient steps)
+3. **Predict** using the adapted parameters through the main task head
+4. **Reset** parameters for the next sample
+
+Multiple augmented versions of the test sample form a pseudo-batch for stable gradient computation. Group Normalization is used instead of Batch Normalization since TTT operates on single samples.
+
+## Online TTT
+
+If test samples arrive in a stream, TTT can keep parameter state across samples instead of resetting:
 
 $$
-W_t = W_{t-1} - \eta \nabla \ell(W_{t-1}; x_t)
+\theta_e^{(t)} = \theta_e^{(t-1)} - \eta \nabla_{\theta_e} \ell_s(\theta_s, \theta_e^{(t-1)}; x_t)
 $$
 
-where $\ell$ is a self-supervised reconstruction loss. The model learns to compress and retrieve context by training its own hidden state on the input sequence.
+This **online** variant accumulates distributional knowledge across the stream and yields the strongest improvements — even outperforming unsupervised domain adaptation methods that have access to the entire unlabeled test set during training.
 
-## Self-Supervised Objective
+## Why It Works: Gradient Correlation
 
-Each token $x_t$ is split into a "view" for reconstruction. The self-supervised loss reconstructs a token from a corrupted version:
+The authors provide a theoretical condition for when TTT helps: the gradients of the main task loss and the self-supervised loss on the shared features must be **correlated**. Intuitively, if solving the self-supervised task pushes the features in the same direction as solving the main task, then updating on the self-supervised loss at test time improves main-task performance.
 
-$$
-\ell(W; x_t) = \| f_W(\tilde{x}_t) - x_t \|^2
-$$
-
-where $\tilde{x}_t$ is a learned corruption of the input. This mirrors how contrastive and masked-prediction methods work in self-supervised learning, but applied token-by-token inside a sequence layer.
-
-## Two Instantiations
-
-### TTT-Linear
-
-The hidden state $W_t$ is a linear model. The update is a single gradient step on the reconstruction loss:
-
-$$
-W_t = W_{t-1} - \eta \nabla_W \| W_{t-1} \tilde{x}_t - x_t \|^2
-$$
-
-This is equivalent to a form of online linear regression. TTT-Linear is fast and already competitive with Mamba.
-
-### TTT-MLP
-
-The hidden state is a two-layer MLP, making it more expressive:
-
-$$
-W_t = \{W^1_t, W^2_t\}
-$$
-
-TTT-MLP performs slightly worse at short context but better at long context, matching the expectation that a more expressive hidden state better exploits additional context.
-
-## Mini-Batch TTT
-
-Rather than updating one token at a time, TTT layers process mini-batches of tokens in parallel. This is critical for hardware efficiency — it maps the inner-loop gradient computation onto matrix multiplications that GPUs handle well.
-
-## Comparison with Alternatives
-
-| Property | Transformer | Mamba | TTT-Linear | TTT-MLP |
-|----------|------------|-------|------------|---------|
-| Complexity | $O(n^2 d)$ | $O(nd)$ | $O(nd)$ | $O(nd)$ |
-| Hidden state | KV cache (grows) | Fixed vector | Linear model | MLP |
-| Long-context scaling | Yes | Plateaus | Yes | Yes |
-| Decode latency | High | Low | Low | Medium |
-
-A key finding: both TTT-Linear and TTT-MLP continue reducing perplexity as context length increases (like Transformers), while Mamba's perplexity plateaus after 16k tokens.
-
-## Architecture Integration
-
-TTT layers are drop-in replacements for attention or SSM layers. The authors test two backbone architectures:
-
-- **Mamba backbone**: Replaces the SSM layer with TTT. Temporal convolutions in this backbone particularly help TTT-Linear (the less expressive variant).
-- **Transformer backbone**: Replaces self-attention with TTT. TTT-MLP shows clearer gains over TTT-Linear in this setting.
+This is empirically confirmed — corruption types with stronger gradient correlation show larger gains from TTT.
 
 ## Results
 
-At scales from 125M to 1.3B parameters:
+On CIFAR-10-C (level 5 corruptions):
 
-- TTT-Linear matches or beats Mamba on language modeling perplexity
-- TTT-Linear is faster than Transformer at 8k+ context and matches Mamba in wall-clock time
-- TTT-MLP shows the strongest long-context performance, pointing toward future work on more expressive hidden states
-- At decode time, TTT-Linear and Mamba have comparable latency, both significantly faster than Transformer
+- TTT improves over both the standard model and joint training without test-time adaptation
+- TTT-Online yields the strongest improvements, outperforming UDA-SS (unsupervised domain adaptation with self-supervision)
+- TTT maintains or slightly improves accuracy on unshifted data — it does not trade clean performance for robustness
 
-## Key Insight
+The approach generalizes across corruption types (noise, blur, weather, digital) and extends to ImageNet-C.
 
-By making the hidden state a learnable model updated through gradient descent, TTT layers unify two ideas: the computational efficiency of RNNs and the expressiveness of learned representations. The hidden state literally *learns* to compress the context it has seen.
+## Legacy
+
+TTT introduced the paradigm of adapting model parameters at test time via self-supervised learning. It has influenced a broad line of follow-up work:
+
+- **TTT++** (Liu et al., 2021) — investigates when self-supervised TTT fails or thrives
+- **TTT-MAE** (Gandelsman et al., 2022) — uses masked autoencoders for test-time training
+- **TTT layers for sequence modeling** (Sun et al., 2024) — repurposes the TTT idea as an RNN hidden state update rule for linear-complexity language models
 
 ## Key Papers
 
-- **Learning to (Learn at Test Time): RNNs with Expressive Hidden States** – Sun et al., 2024
+- **Test-Time Training with Self-Supervision for Generalization under Distribution Shifts** — Sun et al., 2020
+  https://arxiv.org/abs/1909.13231
+- **Learning to (Learn at Test Time): RNNs with Expressive Hidden States** — Sun et al., 2024
   https://arxiv.org/abs/2407.04620
-- **Mamba: Linear-Time Sequence Modeling with Selective State Spaces** – Gu & Dao, 2023
-  https://arxiv.org/abs/2312.00752
-- **Attention Is All You Need** – Vaswani et al., 2017
-  https://arxiv.org/abs/1706.03762
+- **TTT++: When Does Self-Supervised Test-Time Training Fail or Thrive?** — Liu et al., 2021
+  https://proceedings.neurips.cc/paper/2021/file/b618c3210e934362ac261db280128c22-Paper.pdf
