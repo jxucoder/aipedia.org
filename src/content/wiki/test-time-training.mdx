@@ -1,0 +1,106 @@
+---
+title: "Learning to (Learn at Test Time): RNNs with Expressive Hidden States"
+description: "Test-Time Training layers that use self-supervised learning as the hidden state update rule for linear-complexity sequence modeling"
+date: 2026-02-19
+tags: ["architecture", "sequence-modeling", "deep-learning", "efficiency"]
+---
+
+**Test-Time Training (TTT)** layers are a family of sequence modeling layers introduced by Sun et al. (2024) that replace the fixed hidden state of traditional RNNs with a machine learning model that is updated via self-supervised learning — even at test time. This gives RNN-like architectures expressive hidden states while maintaining linear complexity in sequence length.
+
+## The Problem
+
+Transformers achieve strong performance through self-attention, but at $O(n^2)$ cost. Modern RNNs like Mamba restore linear complexity but compress all context into a fixed-size hidden state, which limits expressiveness — particularly for long contexts.
+
+TTT layers offer a middle path: linear complexity with a hidden state that grows in representational power as it processes more tokens.
+
+## Core Idea
+
+In a standard RNN, the hidden state $s_t$ is updated by a fixed rule:
+
+$$
+s_t = f(s_{t-1}, x_t)
+$$
+
+In TTT layers, the hidden state **is itself a model** $W_t$ (e.g., a linear model or MLP), and the update rule is a gradient step on a self-supervised loss:
+
+$$
+W_t = W_{t-1} - \eta \nabla \ell(W_{t-1}; x_t)
+$$
+
+where $\ell$ is a self-supervised reconstruction loss. The model learns to compress and retrieve context by training its own hidden state on the input sequence.
+
+## Self-Supervised Objective
+
+Each token $x_t$ is split into a "view" for reconstruction. The self-supervised loss reconstructs a token from a corrupted version:
+
+$$
+\ell(W; x_t) = \| f_W(\tilde{x}_t) - x_t \|^2
+$$
+
+where $\tilde{x}_t$ is a learned corruption of the input. This mirrors how contrastive and masked-prediction methods work in self-supervised learning, but applied token-by-token inside a sequence layer.
+
+## Two Instantiations
+
+### TTT-Linear
+
+The hidden state $W_t$ is a linear model. The update is a single gradient step on the reconstruction loss:
+
+$$
+W_t = W_{t-1} - \eta \nabla_W \| W_{t-1} \tilde{x}_t - x_t \|^2
+$$
+
+This is equivalent to a form of online linear regression. TTT-Linear is fast and already competitive with Mamba.
+
+### TTT-MLP
+
+The hidden state is a two-layer MLP, making it more expressive:
+
+$$
+W_t = \{W^1_t, W^2_t\}
+$$
+
+TTT-MLP performs slightly worse at short context but better at long context, matching the expectation that a more expressive hidden state better exploits additional context.
+
+## Mini-Batch TTT
+
+Rather than updating one token at a time, TTT layers process mini-batches of tokens in parallel. This is critical for hardware efficiency — it maps the inner-loop gradient computation onto matrix multiplications that GPUs handle well.
+
+## Comparison with Alternatives
+
+| Property | Transformer | Mamba | TTT-Linear | TTT-MLP |
+|----------|------------|-------|------------|---------|
+| Complexity | $O(n^2 d)$ | $O(nd)$ | $O(nd)$ | $O(nd)$ |
+| Hidden state | KV cache (grows) | Fixed vector | Linear model | MLP |
+| Long-context scaling | Yes | Plateaus | Yes | Yes |
+| Decode latency | High | Low | Low | Medium |
+
+A key finding: both TTT-Linear and TTT-MLP continue reducing perplexity as context length increases (like Transformers), while Mamba's perplexity plateaus after 16k tokens.
+
+## Architecture Integration
+
+TTT layers are drop-in replacements for attention or SSM layers. The authors test two backbone architectures:
+
+- **Mamba backbone**: Replaces the SSM layer with TTT. Temporal convolutions in this backbone particularly help TTT-Linear (the less expressive variant).
+- **Transformer backbone**: Replaces self-attention with TTT. TTT-MLP shows clearer gains over TTT-Linear in this setting.
+
+## Results
+
+At scales from 125M to 1.3B parameters:
+
+- TTT-Linear matches or beats Mamba on language modeling perplexity
+- TTT-Linear is faster than Transformer at 8k+ context and matches Mamba in wall-clock time
+- TTT-MLP shows the strongest long-context performance, pointing toward future work on more expressive hidden states
+- At decode time, TTT-Linear and Mamba have comparable latency, both significantly faster than Transformer
+
+## Key Insight
+
+By making the hidden state a learnable model updated through gradient descent, TTT layers unify two ideas: the computational efficiency of RNNs and the expressiveness of learned representations. The hidden state literally *learns* to compress the context it has seen.
+
+## Key Papers
+
+- **Learning to (Learn at Test Time): RNNs with Expressive Hidden States** – Sun et al., 2024
+  https://arxiv.org/abs/2407.04620
+- **Mamba: Linear-Time Sequence Modeling with Selective State Spaces** – Gu & Dao, 2023
+  https://arxiv.org/abs/2312.00752
+- **Attention Is All You Need** – Vaswani et al., 2017
+  https://arxiv.org/abs/1706.03762
