@@ -1,0 +1,137 @@
+---
+title: "Attention Is All You Need"
+description: "The 2017 paper that introduced the Transformer architecture, replacing recurrence with self-attention"
+date: 2026-02-26
+tags: ["paper", "architecture", "attention", "deep-learning", "nlp", "transformer"]
+---
+
+import { AttentionPaperViz } from '../../components/viz/AttentionPaperViz';
+
+**Attention Is All You Need** (Vaswani et al., 2017) is arguably the most influential deep learning paper of the decade. It introduced the **Transformer**, an architecture built entirely on attention mechanisms, eliminating the recurrence and convolution that dominated sequence modeling.
+
+## The Problem
+
+Before Transformers, sequence-to-sequence models relied on RNNs (LSTMs, GRUs). These had fundamental limitations:
+
+- **Sequential computation**: position $t$ must wait for $t-1$, preventing parallelization
+- **Long-range dependencies**: information degrades over many steps despite gating mechanisms
+- **Training bottleneck**: O(n) sequential operations per layer
+
+The paper asked: *Can we build a sequence model using only attention?*
+
+## Core Innovation: Scaled Dot-Product Attention
+
+The fundamental operation of the Transformer:
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$
+
+where:
+- **Q** (Query): what each position is looking for
+- **K** (Key): what each position offers to match against
+- **V** (Value): the actual information to aggregate
+- **$\sqrt{d_k}$**: scaling factor to prevent softmax saturation
+
+## Multi-Head Attention
+
+Rather than a single attention function, the paper uses multiple parallel heads:
+
+$$
+\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)W^O
+$$
+
+$$
+\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+$$
+
+Each head can learn different relational patterns—syntactic, semantic, positional—simultaneously.
+
+## Positional Encoding
+
+Since attention is permutation-invariant, position information is injected via sinusoidal encodings:
+
+$$
+PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
+$$
+
+$$
+PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
+$$
+
+The authors chose sinusoidal functions because they hypothesized the model could learn to attend by relative position, since $PE_{pos+k}$ can be represented as a linear function of $PE_{pos}$.
+
+## Interactive Demo
+
+Explore scaled dot-product attention, multi-head patterns, positional encodings, and the full architecture:
+
+<AttentionPaperViz client:load />
+
+## The Architecture
+
+The Transformer follows an encoder-decoder structure:
+
+**Encoder** (6 identical layers):
+1. Multi-head self-attention
+2. Add & layer norm (residual connection)
+3. Position-wise feed-forward network (two linear layers, ReLU)
+4. Add & layer norm
+
+**Decoder** (6 identical layers):
+1. Masked multi-head self-attention (causal: prevent attending to future positions)
+2. Add & norm
+3. Multi-head cross-attention (queries from decoder, keys/values from encoder)
+4. Add & norm
+5. Feed-forward network
+6. Add & norm
+
+## Key Hyperparameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| $N$ | 6 | Encoder/decoder layers |
+| $d_{\text{model}}$ | 512 | Embedding dimension |
+| $h$ | 8 | Attention heads |
+| $d_k = d_v$ | 64 | Per-head dimension ($d_{\text{model}} / h$) |
+| $d_{ff}$ | 2048 | Feed-forward inner dimension |
+| Dropout | 0.1 | Applied throughout |
+
+## Why It Worked
+
+| Property | RNN | Transformer |
+|----------|-----|-------------|
+| Sequential ops per layer | O(n) | O(1) |
+| Maximum path length | O(n) | O(1) |
+| Computation per layer | O(n·d²) | O(n²·d) |
+| Parallelizable | No | Yes |
+
+For typical sequence lengths where $n < d$, the self-attention layer is faster than recurrent layers. The O(1) maximum path length means any two positions can interact directly, solving the long-range dependency problem.
+
+## Results from the Paper
+
+The Transformer achieved state-of-the-art on English-to-German and English-to-French translation:
+
+- **EN-DE**: 28.4 BLEU (surpassing all previous ensembles)
+- **EN-FR**: 41.0 BLEU (new single-model SOTA)
+- **Training cost**: 3.5 days on 8 P100 GPUs (fraction of competing models)
+
+## Legacy
+
+This single paper spawned the entire modern AI landscape:
+
+- **BERT** (2018): encoder-only Transformer for understanding
+- **GPT series** (2018–): decoder-only Transformer for generation
+- **T5, BART** (2019): encoder-decoder variants
+- **Vision Transformer** (2020): applied to images
+- **Modern LLMs** (GPT-4, Claude, Gemini): scaled Transformers with trillions of tokens
+
+The title proved prophetic—attention really was all you need.
+
+## Key Papers
+
+- **Attention Is All You Need** – Vaswani et al., 2017  \
+  https://arxiv.org/abs/1706.03762
+- **Neural Machine Translation by Jointly Learning to Align and Translate** – Bahdanau et al., 2014  \
+  https://arxiv.org/abs/1409.0473
+- **The Annotated Transformer** – Rush, 2018  \
+  https://nlp.seas.harvard.edu/annotated-transformer/
