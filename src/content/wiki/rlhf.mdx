@@ -1,67 +1,84 @@
 ---
 title: "RLHF: Reinforcement Learning from Human Feedback"
-description: "Aligning language models with human preferences through reward modeling"
+description: "Teaching language models to prefer responses that people rank higher"
 date: 2026-02-01
 tags: ["deep-learning", "nlp", "alignment", "reinforcement-learning", "foundation-models"]
 ---
 
 import { RLHFViz } from '../../components/viz/RLHFViz';
 
-**RLHF (Reinforcement Learning from Human Feedback)** is the technique that transformed GPT from a text predictor into a helpful assistant. By training on human preferences rather than just next-token prediction, RLHF aligns models with human values.
+**RLHF** is a training pipeline for making language models more helpful. The base model already knows how to predict text. RLHF adds a second question: **which responses do humans actually prefer?**
 
-## The Alignment Problem
+> Read [Pre-training](/pre-training) and [Reinforcement Learning](/reinforcement-learning) first if you are new to the setup. This page covers the classic RLHF pipeline; many modern systems also use related preference-optimization methods.
 
-Pre-trained LLMs optimize for:
+## A Concrete Example
+
+Suppose a user asks:
+
+`How do I prepare for my calculus exam?`
+
+The model might generate three answers:
+
+- one vague answer
+- one correct but overly long answer
+- one clear, accurate, and well-structured answer
+
+Humans rank those responses. RLHF trains the model to produce more of the third kind.
+
+## Why Pre-training Is Not Enough
+
+A pre-trained language model is optimized for next-token prediction:
 
 $$
 \mathcal{L}_{\text{pretrain}} = -\sum_i \log P(x_i | x_{<i})
 $$
 
-This produces fluent text but not necessarily *helpful*, *honest*, or *harmless* responses. RLHF bridges this gap.
+That objective makes the model fluent, but fluency is not the same as being helpful, safe, or well-aligned with user intent.
 
 ## The Three-Stage Pipeline
 
-### Stage 1: Supervised Fine-Tuning (SFT)
+### 1. Supervised Fine-Tuning (SFT)
 
-Fine-tune the base model on high-quality demonstrations:
+Start with high-quality prompt-response examples written by humans or curated by trainers.
+
+The model is fine-tuned to imitate those examples:
 
 $$
 \mathcal{L}_{\text{SFT}} = -\sum_i \log P_\theta(y_i | x, y_{<i})
 $$
 
-where $(x, y)$ are human-written prompt-response pairs.
+This gives the model a reasonable baseline style.
 
-### Stage 2: Reward Model Training
+### 2. Reward Model Training
 
-Collect comparison data: humans rank multiple responses to the same prompt.
-
-Train a reward model $R_\phi$ using the Bradley-Terry preference model:
+Next, humans compare multiple answers to the same prompt. A separate model learns to score responses so that preferred ones get higher scores.
 
 $$
 P(y_1 \succ y_2 | x) = \sigma(R_\phi(x, y_1) - R_\phi(x, y_2))
 $$
 
-Loss function:
+You do not need the formula to follow the idea. It just says: **the reward model should assign a higher score to the answer humans liked more**.
 
-$$
-\mathcal{L}_{\text{RM}} = -\mathbb{E}_{(x, y_w, y_l)}[\log \sigma(R_\phi(x, y_w) - R_\phi(x, y_l))]
-$$
+### 3. RL Fine-Tuning
 
-where $y_w$ is the preferred response and $y_l$ is the rejected one.
-
-### Stage 3: RL Fine-Tuning (PPO)
-
-Optimize the policy to maximize reward while staying close to the SFT model:
+Finally, use reinforcement learning to make the policy produce higher-scoring answers while staying close to the supervised model:
 
 $$
 \mathcal{L}_{\text{RLHF}} = \mathbb{E}_{x \sim D, y \sim \pi_\theta}[R_\phi(x, y)] - \beta \cdot D_{KL}(\pi_\theta || \pi_{\text{SFT}})
 $$
 
-The KL penalty prevents the model from gaming the reward model with unnatural outputs.
+In plain English:
 
-## Why KL Regularization?
+- maximize the reward model score
+- but do not drift too far from the sensible SFT policy
 
-Without the KL term, the model finds adversarial responses that score high on the reward model but are gibberish to humans. The constraint keeps outputs within the distribution of sensible language.
+The second term is a **KL penalty**. It acts like a leash that keeps the model from chasing weird high-reward hacks.
+
+## Why the KL Penalty Matters
+
+Without a constraint, the policy can learn to exploit mistakes in the reward model. That is called **reward hacking**.
+
+The KL term reduces that risk by asking the updated model to stay reasonably close to the distribution of answers it produced after supervised fine-tuning.
 
 ## Interactive Visualization
 
@@ -69,20 +86,31 @@ Explore the RLHF pipeline: SFT, reward modeling, and PPO optimization:
 
 <RLHFViz client:load />
 
-## Practical Considerations
+## Where PPO Fits In
 
-| Challenge | Solution |
-|-----------|----------|
-| Reward hacking | KL penalty, reward model ensembles |
-| Label noise | Multiple annotators, calibration |
-| Distribution shift | Online data collection |
-| Cost | Efficient preference collection UI |
+Classic RLHF often uses **PPO** for the reinforcement learning stage. PPO is popular because it improves the policy gradually instead of allowing destructive jumps.
 
-## Impact
+If you want the RL details, read [PPO](/ppo) after this page.
 
-RLHF powers:
-- ChatGPT and GPT-4
-- Claude
-- Gemini
+## Practical Challenges
 
-It's the key technique that made LLMs usable as assistants rather than just text generators.
+| Challenge | Why it happens | Typical fix |
+|-----------|----------------|-------------|
+| Reward hacking | The policy exploits reward model shortcuts | KL penalty, better reward data |
+| Label noise | Humans do not always agree | Multiple raters, calibration |
+| High cost | Preference data is expensive | Better collection tools, active sampling |
+| Distribution shift | The model changes during training | Refresh or expand feedback data |
+
+## Where RLHF Shows Up
+
+- Chat assistants
+- Instruction-following models
+- Safety tuning
+- Preference-aware generation systems
+
+## What To Remember
+
+- Pre-training teaches language patterns
+- RLHF teaches preference-aware behavior
+- The classic pipeline is **SFT -> reward model -> RL**
+- The hardest part is not optimization alone; it is getting reliable human preference data

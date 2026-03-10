@@ -1,54 +1,71 @@
 ---
 title: "Reinforcement Learning"
-description: "Learning optimal behavior through interaction with an environment"
+description: "Learning by trial and error through rewards"
 date: 2026-02-01
 tags: ["deep-learning", "reinforcement-learning", "agents", "decision-making"]
 ---
 
 import { RLViz } from '../../components/viz/RLViz';
 
-**Reinforcement Learning (RL)** is the study of agents learning to make decisions by interacting with an environment. Unlike supervised learning, RL learns from rewards and consequences rather than labeled examples.
+**Reinforcement Learning (RL)** is about learning by trial and error. An agent takes actions, sees what happens, and gets rewards or penalties. Over time, it learns which actions lead to better long-term outcomes.
 
-## The RL Framework
+> Good follow-up pages: [Policy Gradient](/policy-gradient), [DQN](/dqn), [PPO](/ppo), and [RLHF](/rlhf).
 
-An agent interacts with an environment in discrete timesteps:
+## A Simple Example
 
-1. Agent observes state $s_t$
-2. Agent takes action $a_t$
-3. Environment returns reward $r_t$ and next state $s_{t+1}$
-4. Repeat
+Imagine training a robot to leave a maze:
 
-The goal: learn a policy $\pi(a|s)$ that maximizes cumulative reward.
+- every move costs `-1`
+- reaching the exit gives `+100`
+- falling into a trap gives `-50`
+
+The robot is not told the correct path in advance. It has to explore, make mistakes, and gradually discover a strategy that earns the highest total reward.
+
+## The RL Loop
+
+At each step:
+
+1. The agent observes the current **state** $s_t$
+2. It chooses an **action** $a_t$
+3. The environment returns a **reward** $r_t$ and a new state $s_{t+1}$
+4. The process repeats
+
+The goal is to learn a **policy** $\pi(a|s)$: a rule for choosing actions that maximizes long-term reward.
 
 ## Markov Decision Process (MDP)
 
-RL problems are formalized as MDPs:
+RL problems are usually written as a **Markov Decision Process**:
 
-- **States** $\mathcal{S}$: Possible situations
-- **Actions** $\mathcal{A}$: Available choices
-- **Transition** $P(s'|s,a)$: Environment dynamics
-- **Reward** $R(s,a,s')$: Feedback signal
-- **Discount** $\gamma \in [0,1]$: Future reward weighting
+- **States** $\mathcal{S}$: all situations the agent might be in
+- **Actions** $\mathcal{A}$: what the agent can do
+- **Transition** $P(s'|s,a)$: how the world changes after an action
+- **Reward** $R(s,a,s')$: how good or bad that outcome is
+- **Discount** $\gamma$: how much future rewards matter
+
+If that notation is new, the main idea is still simple: **state -> action -> consequence -> reward**.
 
 ## The Objective
 
-Maximize expected discounted return:
+RL tries to maximize the expected discounted return:
 
 $$
 J(\pi) = \mathbb{E}_{\tau \sim \pi}\left[\sum_{t=0}^{\infty} \gamma^t r_t\right]
 $$
 
-where $\tau = (s_0, a_0, r_0, s_1, a_1, r_1, \ldots)$ is a trajectory.
+That expression just means: add up rewards over time, with optional discounting so near-term rewards count more than distant ones.
 
 ## Value Functions
 
-**State value**: Expected return from state $s$ under policy $\pi$:
+Two functions show up everywhere in RL:
+
+- **State value** $V^\pi(s)$: how good it is to be in state $s$
+- **Action value** $Q^\pi(s, a)$: how good it is to take action $a$ in state $s$
+
+They help the agent estimate long-term consequences before it has seen every possible future.
 
 $$
 V^\pi(s) = \mathbb{E}_\pi\left[\sum_{t=0}^{\infty} \gamma^t r_t \mid s_0 = s\right]
 $$
-
-**Action value (Q-function)**: Expected return from taking action $a$ in state $s$:
 
 $$
 Q^\pi(s, a) = \mathbb{E}_\pi\left[\sum_{t=0}^{\infty} \gamma^t r_t \mid s_0 = s, a_0 = a\right]
@@ -56,14 +73,15 @@ $$
 
 ## Bellman Equations
 
-Value functions satisfy recursive relationships:
+The Bellman equations say that the value of a state equals:
+
+- the immediate reward you expect now
+- plus the value of where you are likely to end up next
+
+That recursive structure is what makes dynamic programming and many RL algorithms possible.
 
 $$
 V^\pi(s) = \sum_a \pi(a|s) \sum_{s'} P(s'|s,a)[R(s,a,s') + \gamma V^\pi(s')]
-$$
-
-$$
-Q^\pi(s,a) = \sum_{s'} P(s'|s,a)[R(s,a,s') + \gamma \sum_{a'} \pi(a'|s') Q^\pi(s',a')]
 $$
 
 ## Interactive Visualization
@@ -72,31 +90,47 @@ Watch an agent learn to navigate through trial and error:
 
 <RLViz client:load />
 
-## Two Approaches
+## Two Big Families of Methods
 
-**Value-based**: Learn $Q^*(s,a)$, act greedily
-- Q-learning, DQN
-- Works well for discrete actions
+**Value-based methods**
+- learn a score for actions, such as $Q(s,a)$
+- then pick the action with the highest score
+- examples: Q-learning, [DQN](/dqn)
 
-**Policy-based**: Learn $\pi_\theta(a|s)$ directly
-- Policy gradient, PPO
-- Handles continuous actions
+**Policy-based methods**
+- learn the policy directly
+- work well for continuous or stochastic actions
+- examples: [Policy Gradient](/policy-gradient), [PPO](/ppo)
 
 ## Key Algorithms
 
-| Algorithm | Type | Key Idea |
-|-----------|------|----------|
-| Q-Learning | Value | Off-policy TD learning |
-| DQN | Value | Neural network Q-function |
-| REINFORCE | Policy | Monte Carlo policy gradient |
-| A2C/A3C | Actor-Critic | Value baseline reduces variance |
-| PPO | Policy | Clipped surrogate objective |
-| SAC | Actor-Critic | Maximum entropy RL |
+| Algorithm | Type | Main idea |
+|-----------|------|-----------|
+| Q-Learning | Value | Update action values from experience |
+| DQN | Value | Use a neural network to approximate Q-values |
+| REINFORCE | Policy | Push up actions that led to high reward |
+| PPO | Policy | Improve the policy while limiting unstable updates |
+| SAC | Actor-Critic | Add entropy to encourage exploration |
 
 ## Exploration vs Exploitation
 
-A fundamental tradeoff:
-- **Explore**: Try new actions to discover better strategies
-- **Exploit**: Use current knowledge to maximize reward
+The hardest practical tradeoff in RL is:
 
-Solutions: ε-greedy, UCB, entropy bonuses, curiosity-driven exploration.
+- **Explore**: try uncertain actions that might be better
+- **Exploit**: use the best strategy found so far
+
+If you only exploit, you may miss better strategies. If you only explore, you never settle on one.
+
+## Where RL Shows Up
+
+- Game playing
+- Robotics
+- Recommender systems
+- Resource allocation
+- Language model alignment methods such as [RLHF](/rlhf)
+
+## What To Remember
+
+- RL is learning from reward, not labeled answers
+- The objective is long-term reward, not immediate reward
+- Most methods either learn values, policies, or both

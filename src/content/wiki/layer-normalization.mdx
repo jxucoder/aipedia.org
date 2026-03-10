@@ -1,27 +1,37 @@
 ---
 title: "Layer Normalization"
-description: "Normalizing across features for sequence models and Transformers"
+description: "Normalizing each example across its features"
 date: 2026-02-01
 tags: ["deep-learning", "fundamentals", "training", "transformers"]
 ---
 
 import { LayerNormViz } from '../../components/viz/LayerNormViz';
 
-**Layer Normalization (LayerNorm)** normalizes across the feature dimension rather than the batch dimension. This makes it ideal for Transformers and RNNs where batch statistics are problematic.
+**Layer Normalization (LayerNorm)** rescales the features inside a single example so they have a more stable distribution. In practice, it helps deep models train more reliably, especially Transformers.
 
-## The Key Difference
+> Read [Batch Normalization](/batch-normalization) first if you want the easiest comparison. This page focuses on why LayerNorm became the default in Transformer-style models.
 
-**BatchNorm**: Normalize across batch for each feature
-$$
-\hat{x}_{n,d} = \frac{x_{n,d} - \mu_d}{\sqrt{\sigma_d^2 + \epsilon}}, \quad \mu_d = \frac{1}{N}\sum_n x_{n,d}
-$$
+## A Small Example
 
-**LayerNorm**: Normalize across features for each sample
-$$
-\hat{x}_{n,d} = \frac{x_{n,d} - \mu_n}{\sqrt{\sigma_n^2 + \epsilon}}, \quad \mu_n = \frac{1}{D}\sum_d x_{n,d}
-$$
+Suppose one token embedding has four features:
 
-## The Algorithm
+`[2, 10, -4, 8]`
+
+LayerNorm computes the mean and variance of those four numbers, normalizes them, then applies learned scale and shift parameters. The important point is that **the normalization happens within that one example**, not across the batch.
+
+## BatchNorm vs LayerNorm
+
+**BatchNorm** normalizes a feature using statistics collected across different examples in the batch.
+
+**LayerNorm** normalizes across the features of one example at a time.
+
+That difference is why LayerNorm works well when:
+
+- batch size is small
+- sequence lengths vary
+- you are generating one token at a time
+
+## The Formula
 
 For an input $x \in \mathbb{R}^D$:
 
@@ -33,7 +43,7 @@ $$
 \hat{x} = \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}}, \quad y = \gamma \odot \hat{x} + \beta
 $$
 
-where $\gamma, \beta \in \mathbb{R}^D$ are learnable parameters.
+where $\gamma$ and $\beta$ are learnable parameters that let the model choose the final scale and offset.
 
 ## Interactive Visualization
 
@@ -41,59 +51,50 @@ Compare BatchNorm and LayerNorm normalization patterns:
 
 <LayerNormViz client:load />
 
-## Why LayerNorm for Transformers?
+## Why Transformers Use It
 
-1. **Batch independence**: Each sequence is normalized independently
-2. **Variable sequence lengths**: No batch statistics needed
-3. **Inference consistency**: Same computation at train and test time
-4. **Autoregressive generation**: Works with batch size 1
+Transformers rely on LayerNorm because it is:
+
+1. **Batch-independent**: each sequence can be normalized on its own
+2. **Stable at inference time**: train and test use the same basic computation
+3. **Friendly to autoregressive generation**: it still works when batch size is 1
 
 ## Pre-Norm vs Post-Norm
 
-**Post-Norm** (original Transformer):
+Two common block layouts are:
+
+**Post-Norm**:
+
 $$
 x' = \text{LayerNorm}(x + \text{Sublayer}(x))
 $$
 
-**Pre-Norm** (modern preference):
+**Pre-Norm**:
+
 $$
 x' = x + \text{Sublayer}(\text{LayerNorm}(x))
 $$
 
-Pre-Norm enables better gradient flow and often converges faster.
+Modern large language models often prefer **pre-norm** because gradients tend to behave better in deep networks.
 
-## RMSNorm: A Simpler Alternative
+## RMSNorm
 
-Remove the mean centering:
+**RMSNorm** is a close relative that skips mean-centering:
 
 $$
 \hat{x} = \frac{x}{\sqrt{\frac{1}{D}\sum_d x_d^2 + \epsilon}} \cdot \gamma
 $$
 
-Used in LLaMA and many modern LLMs—simpler and often works just as well.
+It is a simpler normalization choice used in many modern LLMs.
 
-## Comparison Table
+## Common Confusion
 
-| Aspect | BatchNorm | LayerNorm | RMSNorm |
-|--------|-----------|-----------|---------|
-| Normalizes over | Batch | Features | Features |
-| Learnable params | 2D | 2D | D |
-| Mean centering | Yes | Yes | No |
-| Best for | CNNs | Transformers | LLMs |
+- LayerNorm does **not** normalize across the batch
+- It does **not** remove the need for residual connections
+- It helps optimization, but it is not a substitute for good architecture design
 
-## Common Placements in Transformers
+## What To Remember
 
-```python
-# Pre-norm Transformer block
-def forward(x):
-    x = x + self.attn(self.norm1(x))
-    x = x + self.ffn(self.norm2(x))
-    return x
-```
-
-## Key Insight
-
-LayerNorm's batch independence makes it essential for:
-- Autoregressive generation (batch size 1)
-- Variable-length sequences
-- Distributed training across sequence dimension
+- LayerNorm normalizes each example across its features
+- That makes it a good fit for sequence models and Transformers
+- Pre-norm and RMSNorm are the most relevant follow-on ideas for modern LLMs

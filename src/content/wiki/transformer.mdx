@@ -1,46 +1,73 @@
 ---
-title: "Attention Is All You Need"
-description: "The Transformer architecture that replaced recurrence with self-attention"
+title: "Transformer"
+description: "Self-attention models that process sequences in parallel"
 date: 2026-01-13
-tags: ["architecture", "attention", "deep-learning", "nlp"]
+tags: ["architecture", "attention", "deep-learning", "nlp", "transformer"]
 ---
 
 import { TransformerViz } from '../../components/viz/TransformerViz';
 
-The **Transformer** is a neural network architecture introduced in *Attention Is All You Need* by Vaswani et al. (2017). It replaces recurrence and convolution with **self-attention**, enabling parallel sequence processing and strong modeling of long-range dependencies.
+The **Transformer** is a neural network architecture for working with sequences such as text, code, and audio. Its key idea is simple: instead of reading tokens one at a time like an RNN, let every token look at the other relevant tokens and decide what matters most.
+
+> If this page feels too fast, read [Sequence to Sequence](/seq2seq) and [Bahdanau Attention](/bahdanau-attention) first. This page teaches the **general architecture**. For the original 2017 paper, see [Attention Is All You Need](/attention-is-all-you-need).
+
+## Why Students Should Care
+
+Transformers are the foundation of:
+
+- **GPT-style models** for generation
+- **BERT-style models** for understanding
+- **Vision Transformers** for images
+- Most modern LLMs
+
+If you understand the Transformer, you understand the core design behind much of modern AI.
+
+## A Quick Example
+
+Take the sentence:
+
+`The animal did not cross the street because it was tired.`
+
+To understand what **it** refers to, the model should pay more attention to **animal** than to **street**. A Transformer does exactly this: it learns attention weights that tell each token which other tokens to focus on.
 
 ## Core Attention
+
+In plain English:
+
+- **Query (Q)**: what the current token is looking for
+- **Key (K)**: what each other token can offer
+- **Value (V)**: the information each token carries
+
+Each token compares its query to the keys of the other tokens. Higher matches get higher attention weights, and those weights are used to combine the values.
 
 $$
 \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
 
-- **Query (Q)**: what the current token is looking for
-- **Key (K)**: what each token offers
-- **Value (V)**: information carried by each token
-
-Each token attends to all others by comparing queries to keys, then combining values using the resulting attention weights.
+You do not need to memorize the equation. The important idea is: **compare, weight, combine**.
 
 ## Multi-Head Attention
 
-Instead of a single attention operation, Transformers use multiple heads:
+A single attention pattern is often too limited. So Transformers use several attention heads in parallel:
 
 $$
 \text{MultiHead}(Q,K,V) = \text{Concat}(head_1,\dots,head_h)W^O
 $$
 
-where each head computes attention with different learned projections. This allows the model to capture different relational patterns simultaneously.
+Different heads can specialize. One head may focus on nearby words, another on subject-verb agreement, and another on longer-range references.
 
 ## Positional Encoding
 
-Since attention is order-agnostic, positional encodings inject sequence order information:
+Attention alone does not know word order. Without extra information, `dog bites man` and `man bites dog` would look like the same bag of tokens.
+
+Transformers fix this by adding a position signal to each token embedding:
 
 $$
 PE_{(pos,2i)} = \sin\left(\frac{pos}{10000^{2i/d}}\right), \quad
 PE_{(pos,2i+1)} = \cos\left(\frac{pos}{10000^{2i/d}}\right)
 $$
 
-These fixed encodings allow the model to reason about relative and absolute positions.
+The equation is less important than the purpose: **tell the model where each token sits in the sequence**.
 
 ## Interactive Demo
 
@@ -48,27 +75,23 @@ Explore multi-head attention, token flow, and positional encodings below:
 
 <TransformerViz client:load />
 
-## Key Papers
-
-- **Attention Is All You Need** – Vaswani et al., 2017  \
-  https://arxiv.org/abs/1706.03762
-- **BERT: Pre-training of Deep Bidirectional Transformers** – Devlin et al., 2018  \
-  https://arxiv.org/abs/1810.04805
-- **GPT: Improving Language Understanding by Generative Pre-Training** – Radford et al., 2018  \
-  https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
-
 ## The Architecture
 
-The full Transformer consists of:
+The original Transformer had two parts:
 
-**Encoder**: N layers of (Self-Attention → Add & Norm → FFN → Add & Norm)  
-**Decoder**: N layers of (Masked Self-Attention → Cross-Attention → FFN), each with Add & Norm
+- **Encoder**: reads the input and builds contextual representations
+- **Decoder**: generates the output one token at a time
 
-The original paper used N=6 layers, d_model=512, and 8 attention heads.
+At a high level:
 
-## Why No Recurrence?
+- Encoder block = self-attention -> add and norm -> feed-forward network
+- Decoder block = masked self-attention -> cross-attention -> feed-forward network
 
-RNNs process sequentially: position $t$ must wait for $t-1$. Self-attention computes all positions in parallel:
+Many modern LLMs use only the **decoder** side because text generation is the main task.
+
+## Why It Beat RNNs
+
+RNNs must process tokens one after another. Transformers can process all tokens in parallel.
 
 | Property | RNN | Transformer |
 |----------|-----|-------------|
@@ -76,15 +99,26 @@ RNNs process sequentially: position $t$ must wait for $t-1$. Self-attention comp
 | Max path length | O(n) | O(1) |
 | Parallelizable | No | Yes |
 
-## Key Insight
+That made Transformers faster to train and better at connecting distant parts of a sequence.
 
-Self-attention lets every token interact with every other token in a single layer, making Transformers both expressive and highly parallelizable.
+## Common Confusion
 
-## Historical Impact
+- **Transformer** is the architecture.
+- **Attention Is All You Need** is the paper that introduced it.
+- **Self-attention** is one mechanism inside the architecture, not the whole model.
 
-"Attention Is All You Need" is one of the most cited AI papers. The Transformer architecture underlies:
-- **GPT series** (decoder-only)
-- **BERT** (encoder-only)
-- **T5, BART** (encoder-decoder)
-- **Vision Transformers** (ViT)
-- **Modern LLMs** (GPT-4, Claude, etc.)
+## Where To Go Next
+
+- Read [Attention Is All You Need](/attention-is-all-you-need) for the original paper and results
+- Read [BERT](/bert) for encoder-only Transformers
+- Read [GPT](/gpt) for decoder-only Transformers
+- Read [Vision Transformer](/vision-transformer) for image applications
+
+## Key Papers
+
+- **Attention Is All You Need** - Vaswani et al., 2017  \
+  https://arxiv.org/abs/1706.03762
+- **BERT: Pre-training of Deep Bidirectional Transformers** - Devlin et al., 2018  \
+  https://arxiv.org/abs/1810.04805
+- **GPT: Improving Language Understanding by Generative Pre-Training** - Radford et al., 2018  \
+  https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf

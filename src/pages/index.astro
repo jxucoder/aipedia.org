@@ -28,6 +28,21 @@ const formatDate = (date: Date) => {
     timeZone: 'UTC'
   });
 };
+
+const startHereSlugs = [
+  'backpropagation',
+  'understanding-lstms',
+  'seq2seq',
+  'bahdanau-attention',
+  'transformer',
+  'gpt',
+  'reinforcement-learning',
+  'policy-gradient',
+];
+
+const startHerePages = startHereSlugs
+  .map(slug => pageData.find(page => page.slug === slug))
+  .filter(Boolean);
 ---
 
 <Base title="Home">
@@ -38,13 +53,43 @@ const formatDate = (date: Date) => {
         <Logo size="xl" />
       </h1>
       <p class="text-text-secondary text-lg mb-10">
-        Technical AI/ML reference for practitioners
+        AI and machine learning concepts explained with interactive visuals
       </p>
       
       <!-- Search - prominent like Grokpedia -->
       <SearchBox client:load pages={pageData} />
     </div>
   </div>
+
+  <!-- Start here section -->
+  <section class="max-w-2xl mx-auto px-4 pb-12">
+    <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">
+      Start Here
+    </h2>
+    <p class="text-sm text-text-secondary mb-6">
+      New to the field? Follow this path from fundamentals to modern models.
+    </p>
+    <div class="divide-y divide-border border-y border-border">
+      {startHerePages.map((page, index) => (
+        <a
+          href={`/${page.slug}`}
+          class="group flex items-start gap-4 py-4 hover:bg-bg-secondary/30 -mx-4 px-4 transition-colors"
+        >
+          <div class="text-xs text-text-secondary pt-1 w-6 shrink-0">
+            {index + 1}
+          </div>
+          <div>
+            <div class="font-medium group-hover:underline mb-1">
+              {page.title}
+            </div>
+            <div class="text-sm text-text-secondary">
+              {page.description}
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
 
   <!-- Topics section -->
   <section class="max-w-2xl mx-auto px-4 pb-20">

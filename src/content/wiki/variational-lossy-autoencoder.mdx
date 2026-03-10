@@ -1,32 +1,46 @@
 ---
 title: "Variational Lossy Autoencoder"
-description: "Connecting VAEs to lossy compression and the bits-back coding argument"
+description: "Understanding VAEs as compression systems with a rate-distortion trade-off"
 date: 2026-01-13
 tags: ["deep-learning", "vae", "compression", "generative"]
 ---
 
 import { VLAEViz } from '../../components/viz/VLAEViz';
 
-**Variational Lossy Autoencoder** (VLAE) reframes VAEs through the lens of lossy compression, providing insights into the rate-distortion trade-off and introducing the bits-back coding argument.
+**Variational Lossy Autoencoder (VLAE)** is a way of looking at VAEs through the lens of compression. Instead of asking only "can the model reconstruct the input?", it asks "how many bits should the latent code use, and what reconstruction quality do we get in return?"
 
-## VAEs as Compression
+> Read [VAE](/vae) first if you are new to the topic. This page is best understood as a second pass that explains what the VAE objective means.
 
-A VAE can be viewed as a lossy compressor:
+## A Compression Analogy
 
-- **Encoder** $q(z|x)$: Compress input to latent code
-- **Decoder** $p(x|z)$: Decompress latent back to reconstruction
-- **Rate**: Bits needed to transmit $z$
-- **Distortion**: Reconstruction error
+Think about compressing an image before sending it over a network.
 
-## The Rate-Distortion Trade-off
+- If you keep many details, the file is large but reconstruction is accurate
+- If you compress aggressively, the file is small but details are lost
 
-The VAE objective balances rate and distortion:
+VLAE says a VAE is solving that same trade-off in learned form.
+
+## VAEs as Compressors
+
+A VAE has two main parts:
+
+- **Encoder** $q(z|x)$: turn the input into a latent code
+- **Decoder** $p(x|z)$: reconstruct the input from that code
+
+This suggests two competing goals:
+
+- **Rate**: how many bits are needed to describe the latent
+- **Distortion**: how much reconstruction error we allow
+
+## The Rate-Distortion Objective
+
+The VAE objective can be written as:
 
 $$
 \mathcal{L} = \underbrace{-\mathbb{E}_{q(z|x)}[\log p(x|z)]}_{\text{Distortion}} + \underbrace{\beta \cdot D_{KL}(q(z|x) \| p(z))}_{\text{Rate}}
 $$
 
-The KL term is exactly the **rate**—bits to encode the latent.
+The first term rewards accurate reconstruction. The second term discourages the model from storing too much information in the latent code.
 
 ## Interactive Demo
 
@@ -34,78 +48,51 @@ Explore the rate-distortion trade-off and bits-back coding:
 
 <VLAEViz client:load />
 
+## Why This View Is Useful
+
+Once you think of a VAE as a compressor, several behaviors make more sense:
+
+- a stronger decoder can sometimes ignore the latent
+- changing $\beta$ changes how much information the latent is allowed to carry
+- "posterior collapse" becomes easier to interpret
+
 ## Bits-Back Coding
 
-A key insight: encoding with a learned posterior is more efficient than it appears.
+The famous bits-back argument says the KL term can overstate the true effective cost of the latent because stochastic decoding can recover some information "for free."
 
-**Naive view**: 
 $$
 \text{Rate} = D_{KL}(q(z|x) \| p(z))
 $$
 
-**Bits-back view**: The decoder's stochasticity can encode additional information "for free."
+That is the technical idea behind why VAEs connect so naturally to information theory and compression.
+
+For a first pass, the most important takeaway is simpler: **the latent cost is not just a regularizer; it is part of a coding trade-off**.
+
+## Posterior Collapse
+
+If the decoder becomes so strong that it can reconstruct well without using the latent, then the model may push:
 
 $$
-\text{Effective Rate} = D_{KL}(q(z|x) \| p(z)) - H[p(x|z)]
+q(z|x) \approx p(z)
 $$
 
-## Why Bits-Back Works
+In that case, the latent carries very little information. This is called **posterior collapse**.
 
-When transmitting with a stochastic decoder:
+## Common Fixes
 
-1. Sample $z \sim q(z|x)$ and transmit
-2. Decoder samples reconstruction—this randomness carries extra bits!
-3. Net rate is lower than the KL term alone
+| Method | Goal |
+|--------|------|
+| KL annealing | Let reconstruction stabilize before strongly penalizing rate |
+| Free bits | Reserve a minimum amount of information in the latent |
+| $\beta$-VAE | Directly control the rate-distortion trade-off |
 
-This explains why VAEs with powerful decoders don't always use the latent.
+## What To Remember
 
-## The Posterior Collapse Problem
-
-If the decoder is too powerful:
-
-$$
-p(x|z) \approx p(x) \quad \Rightarrow \quad q(z|x) \approx p(z)
-$$
-
-The model ignores $z$ entirely! VLAE analysis explains this as achieving zero rate.
-
-## Fixing Posterior Collapse
-
-Solutions motivated by rate-distortion:
-
-| Approach | Effect |
-|----------|--------|
-| KL annealing | Gradually increase rate penalty |
-| Free bits | Minimum rate budget per dimension |
-| δ-VAE | Explicit rate constraint |
-
-## Connection to β-VAE
-
-β-VAE is exactly VLAE with controllable rate:
-
-$$
-\mathcal{L}_{\beta} = \text{Distortion} + \beta \cdot \text{Rate}
-$$
-
-- $\beta < 1$: Allow higher rate, better reconstruction
-- $\beta > 1$: Force lower rate, more compression/disentanglement
-
-## Information-Theoretic View
-
-$$
-I(X; Z) \leq D_{KL}(q(z|x) \| p(z))
-$$
-
-The KL bounds mutual information. Minimizing it limits how much $Z$ "knows" about $X$.
-
-## Key Insights
-
-1. **VAEs are compressors**: ELBO = rate + distortion
-2. **Bits-back is real**: Stochastic decoders provide free bits
-3. **Posterior collapse explained**: Zero-rate solution is valid
-4. **β controls trade-off**: Disentanglement = low rate
+- VLAE interprets VAEs as lossy compression systems
+- The KL term is about information budget, not just regularization
+- Posterior collapse means the model has stopped using the latent effectively
 
 ## Key Paper
 
-- **Variational Lossy Autoencoder** — Chen et al. (2016)  
+- **Variational Lossy Autoencoder** - Chen et al. (2016)  
   https://arxiv.org/abs/1611.02731

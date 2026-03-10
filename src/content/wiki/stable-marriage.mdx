@@ -1,15 +1,21 @@
 ---
 title: "Stable Marriage Problem"
-description: "Finding stable matchings via the Gale–Shapley algorithm"
+description: "Finding a stable matching with the Gale-Shapley deferred acceptance algorithm"
 date: 2026-01-10
 tags: ["algorithm", "matching", "game-theory", "optimization"]
 ---
 
 import { StableMarriageViz } from '../../components/viz/StableMarriageViz';
 
-The **Stable Marriage Problem** asks how to match two equal-sized sets of agents (traditionally called men and women) given preference rankings, such that no unmatched pair would both prefer each other over their assigned partners.
+The **Stable Marriage Problem** is the historical name for a matching problem between two groups with ranked preferences. Today, it is often explained more neutrally as a **stable matching** problem between applicants and programs, students and schools, or any two-sided market.
 
-The classic solution is the **Gale–Shapley deferred acceptance algorithm**, which always produces a stable matching.
+The classic solution is the **Gale-Shapley deferred acceptance algorithm**, which always produces a stable matching.
+
+## A Simple Goal
+
+We want a matching with no **blocking pair**: no applicant and program that would both prefer each other over their assigned match.
+
+If such a pair exists, the matching is unstable because those two sides would rather deviate.
 
 ## Interactive Demo
 
@@ -17,46 +23,46 @@ The classic solution is the **Gale–Shapley deferred acceptance algorithm**, wh
 
 ## Algorithm Explanation
 
-At a high level, the Gale–Shapley algorithm works as follows (assuming men propose):
+At a high level, the Gale-Shapley algorithm works like this:
 
-1. All participants start unmatched.
-2. Each unmatched man proposes to the most-preferred woman he has not yet proposed to.
-3. Each woman considers all received proposals and *tentatively* accepts the one she prefers most, rejecting the rest.
-4. Rejected men move on to their next preference.
-5. The process repeats until no unmatched man wishes to propose.
+1. Everyone starts unmatched.
+2. Each unmatched applicant proposes to the highest-ranked program they have not yet tried.
+3. Each program tentatively keeps its favorite proposal so far and rejects the rest.
+4. Rejected applicants move to their next choice.
+5. The process repeats until no more proposals are needed.
 
-Although acceptances are tentative, the algorithm is guaranteed to terminate with a **stable matching**.
+The word **tentatively** matters. Programs may replace an earlier tentative match if a better proposal arrives later.
 
 ## Why the Result Is Stable
 
-A matching is **stable** if there is no *blocking pair*—a man and woman who both prefer each other over their current matches.
+Gale-Shapley prevents blocking pairs because:
 
-Gale–Shapley prevents blocking pairs because:
+- applicants propose in order of preference
+- programs only trade up, never down
+- once a program rejects an applicant, it will never want that applicant later
 
-- Men propose in decreasing order of preference.
-- A woman only trades up when a better proposal arrives.
-- Once a woman rejects a man, she will never later prefer him.
-
-As a result, no mutually preferable deviation can exist at termination.
+So when the algorithm ends, there is no unmatched pair that would rather be together.
 
 ## Time Complexity
 
-For *n* participants on each side:
+For $n$ participants on each side:
 
-- Each man proposes to each woman at most once.
-- There are at most *n²* proposals.
+- each applicant proposes to each program at most once
+- there are at most $n^2$ proposals
 
-**Time complexity:** `O(n²)`  
-**Space complexity:** `O(n²)` (to store preferences)
+**Time complexity:** `O(n^2)`  
+**Space complexity:** `O(n^2)` to store preferences
 
 ## Applications
 
-Stable matching algorithms are widely used in practice:
+- Medical residency matching
+- College admissions and school choice
+- Job matching platforms
+- Organ exchange systems
 
-- **Medical residency matching** (NRMP in the United States)
-- **College admissions** and school choice systems
-- **Job matching platforms** with ranked preferences
-- **Organ exchange programs**
+## Historical Note
+
+The historical title comes from the original 1962 paper, but the algorithm is now used far beyond marriage-style examples.
 
 ## Key Papers
 
@@ -64,9 +70,3 @@ Stable matching algorithms are widely used in practice:
   https://www.jstor.org/stable/2312726
 - Roth, A. E. (1984). *The Evolution of the Labor Market for Medical Interns and Residents*.  
   https://www.jstor.org/stable/1837229
-
-## Historical Note
-
-In **2012**, the **Nobel Prize in Economic Sciences** was awarded to **Lloyd Shapley** and **Alvin E. Roth** for their work on the theory and practice of stable allocations and market design.
-
-Their contributions turned the Stable Marriage Problem from a theoretical curiosity into a foundational tool for real-world market design.

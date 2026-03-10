@@ -1,41 +1,55 @@
 ---
 title: "Scaling Laws for Neural Language Models"
-description: "Empirical laws governing how language model performance scales with compute, data, and parameters"
+description: "Why bigger models, more data, and more compute lead to predictable gains"
 date: 2026-01-13
 tags: ["deep-learning", "nlp", "scaling", "transformers"]
 ---
 
 import { ScalingLawsViz } from '../../components/viz/ScalingLawsViz';
 
-**Scaling Laws for Neural Language Models** discovered that language model performance follows remarkably smooth power laws across many orders of magnitude. This paper provided the theoretical foundation for training ever-larger models.
+**Scaling laws** describe a practical pattern in modern ML: when you increase model size, training data, and compute in a sensible way, performance often improves smoothly and predictably rather than randomly.
+
+> Read [Pre-training](/pre-training) and [GPT](/gpt) first if you want the surrounding context. This page is about the empirical rule behind "bigger models keep getting better."
+
+## A Simple Mental Model
+
+Suppose you have a fixed training budget. You could spend it on:
+
+- a larger model
+- more data
+- more training steps
+
+Scaling-law papers ask: **if I spend twice as much compute, how much better should I expect the model to get?**
+
+Their answer was surprising: the curve is often smooth enough that you can predict it before running the full experiment.
 
 ## The Core Discovery
 
-Cross-entropy loss $L$ follows power laws in:
+The original paper found that cross-entropy loss followed power laws with model size $N$, data size $D$, and compute $C$:
 
 $$
 L(N) = \left(\frac{N_c}{N}\right)^{\alpha_N}, \quad \alpha_N \approx 0.076
 $$
 
 $$
-L(D) = \left(\frac{D_c}{D}\right)^{\alpha_D}, \quad \alpha_D \approx 0.095  
+L(D) = \left(\frac{D_c}{D}\right)^{\alpha_D}, \quad \alpha_D \approx 0.095
 $$
 
 $$
 L(C) = \left(\frac{C_c}{C}\right)^{\alpha_C}, \quad \alpha_C \approx 0.050
 $$
 
-where $N$ = parameters, $D$ = dataset size, $C$ = compute.
+The exact exponents are less important than the lesson: **performance improves in a regular way as scale increases**.
 
-## The Unified Law
+## Why This Was a Big Deal
 
-When optimally allocating a compute budget $C$:
+Before scaling laws, training larger models involved much more guesswork.
 
-$$
-L(C) = \left(\frac{C_c}{C}\right)^{\alpha_C}
-$$
+After scaling laws, teams could:
 
-This means: **double your compute, get predictable improvement**.
+- estimate expected gains before full runs
+- decide whether more compute was worth the cost
+- plan better trade-offs between parameters and data
 
 ## Interactive Visualization
 
@@ -45,54 +59,56 @@ Explore how loss decreases with scale:
 
 ## Optimal Allocation
 
-Given compute budget $C$, how to split between model size and training data?
+Given a compute budget $C$, the original paper suggested:
 
 $$
 N^* \propto C^{0.73}
 $$
+
 $$
 D^* \propto C^{0.27}
 $$
 
-**Key insight**: Larger models are more sample-efficient. As compute grows, invest mostly in parameters.
+That meant: under the original estimate, you should spend more of the extra budget on **model size** than on **data**.
 
-## What Doesn't Matter (Much)
+## A Helpful Interpretation
 
-The paper found these have minimal impact on scaling:
-- Model shape (depth vs width)
-- Learning rate schedule details
-- Batch size (within reason)
-- Context length (once sufficient)
+If a student asks, "Does this mean giant models always win?" the better answer is:
 
-The power law exponents remain remarkably constant.
+- larger models usually help
+- but only when you also scale data and compute sensibly
+- poor allocation can waste the budget
 
-## Practical Implications
-
-| Compute Budget | Optimal Parameters | Tokens |
-|---------------|-------------------|--------|
-| 10^18 FLOPs | ~100M | ~2B |
-| 10^21 FLOPs | ~1B | ~20B |
-| 10^24 FLOPs | ~10B | ~200B |
-
-## Why This Matters
-
-Before this paper, scaling was empirical guesswork. After:
-
-1. **Predictability**: Know performance before training
-2. **Investment justification**: Larger compute → guaranteed gains
-3. **Research direction**: Showed the path to GPT-3 and beyond
+Scaling laws are about **how to scale well**, not just scaling blindly.
 
 ## The Chinchilla Update
 
-Note: Hoffmann et al. (2022) later showed the original laws underestimated optimal data. "Chinchilla scaling" suggests:
+Later work, especially Chinchilla-style analysis, argued that the original paper under-trained large models relative to the amount of available data.
+
+That updated view suggests a more balanced rule:
 
 $$
 N^* \propto C^{0.5}, \quad D^* \propto C^{0.5}
 $$
 
-Equal investment in parameters and data may be better.
+So a major lesson for students is that scaling laws are not one fixed formula forever. They are an evolving empirical picture.
+
+## Practical Implications
+
+| Question | Scaling-law answer |
+|----------|--------------------|
+| Should we expect smooth gains from more scale? | Often yes |
+| Can we predict those gains ahead of time? | Roughly yes |
+| Is bigger always enough by itself? | No |
+| Does data allocation matter? | A lot |
+
+## What To Remember
+
+- Scaling laws made large-model training more predictable
+- The important variables are model size, data, and compute
+- Later work refined the original story, especially around data-optimal training
 
 ## Key Paper
 
-- **Scaling Laws for Neural Language Models** — Kaplan et al. (2020)  
+- **Scaling Laws for Neural Language Models** - Kaplan et al. (2020)  
   https://arxiv.org/abs/2001.08361

@@ -1,41 +1,82 @@
 ---
 title: "Pre-training"
-description: "The initial phase of training foundation models on vast amounts of data"
+description: "The stage where a model learns broad patterns from a very large dataset"
 date: 2026-01-10
-tags: ["deep-learning", "training", "foundation-models", "sota"]
+tags: ["deep-learning", "training", "foundation-models"]
 ---
 
-**Pre-training** is the first and most computationally intensive stage in the development of modern foundation models. During this phase, a model is trained on a massive dataset (often terabytes of text, code, or images) to learn general-purpose patterns, representations, and world knowledge.
+**Pre-training** is the first major stage in building a modern foundation model. During this stage, the model is exposed to a huge amount of data and learns broad patterns in language, code, images, or other modalities before it is adapted to a narrower task.
 
-The resulting "pre-trained" model serves as a base that can be further adapted (via **fine-tuning**) for specific downstream tasks.
+> Good follow-up pages: [GPT](/gpt), [BERT](/bert), [Transformer](/transformer), and [Scaling Laws](/scaling-laws).
 
-## Core Concepts
+## A Simple Example
 
-### Self-Supervised Learning
-Most modern pre-training relies on **self-supervised learning**, where the training labels are derived directly from the data itself. Common objectives include:
+Suppose you want a model that can answer biology questions. You could train it only on biology examples, but that would be limiting.
 
-- **Causal Language Modeling (CLM)**: Predicting the next token in a sequence (e.g., GPT style).
-  $$ P(x) = \prod_{i=1}^n P(x_i | x_{<i}) $$
-- **Masked Language Modeling (MLM)**: Predicting masked tokens based on surrounding context (e.g., BERT style).
+Instead, pre-training teaches the model broad skills first:
 
-### Scaling Laws
-Performance typically improves predictably with increases in:
-1. **Compute**: Total FLOPs used for training.
-2. **Dataset Size**: Number of training tokens.
-3. **Parameters**: Number of weights in the model.
+- how sentences are structured
+- how facts are expressed in text
+- how code, math, or diagrams tend to look
 
-## Recent SOTA Model (01/2026)
+After that broad stage, the model can be adapted more efficiently to specific tasks.
 
-### Falcon-H1R 7B
-Released in **January 2026** by the **Technology Innovation Institute (TII)**, Falcon-H1R 7B represents a shift towards efficient hybrid architectures.
+## Why Pre-training Matters
 
-- **Architecture**: **Transformer-Mamba Hybrid**. It combines the parallel processing capabilities of Transformers (attention mechanisms) with the linear-time inference of Mamba (state space models).
-- **Performance**: Despite its relatively small size (7B parameters), it achieves an **88.1%** score on the AIME-24 math benchmark, rivaling much larger pure-Transformer models.
-- **Significance**: The H1R demonstrates that hybridizing recurrence with attention can yield state-of-the-art reasoning capabilities while maintaining memory efficiency and faster inference speeds compared to traditional architectures.
+Pre-training does three important things:
+
+1. It gives the model general-purpose representations
+2. It reduces the amount of labeled task-specific data you need later
+3. It creates a reusable base model for many downstream uses
+
+That is why so much of modern AI development is really about building and adapting pre-trained models.
+
+## Common Objectives
+
+Most pre-training uses **self-supervised learning**, which means the training signal comes from the data itself.
+
+### Causal Language Modeling
+
+Predict the next token from the previous ones:
+
+$$
+P(x) = \prod_{i=1}^n P(x_i | x_{<i})
+$$
+
+This is the objective used by GPT-style models.
+
+### Masked Language Modeling
+
+Hide some tokens and ask the model to fill them in from context.
+
+This is the objective used by BERT-style models.
 
 ## The Pre-training Pipeline
 
-1. **Data Curation**: Collecting, cleaning, and deduplicating massive corpora (CommonCrawl, GitHub, papers).
-2. **Tokenization**: Converting raw text into numerical tokens.
-3. **Training**: Running the model on thousands of GPUs for weeks or months.
-4. **Evaluation**: Monitoring loss and benchmarking on standard test sets (MMLU, HumanEval, etc.).
+1. **Data curation**: collect, filter, deduplicate, and clean large corpora
+2. **Tokenization**: convert raw text or other inputs into model-ready units
+3. **Training**: optimize the model across many steps on large compute clusters
+4. **Evaluation**: track loss and benchmark behavior
+
+## What Makes Pre-training Hard
+
+- huge compute requirements
+- messy internet-scale data
+- difficult decisions about data mixture and quality
+- strong interactions between model size, tokens, and compute budget
+
+That is where [Scaling Laws](/scaling-laws) become useful.
+
+## Pre-training vs Fine-Tuning
+
+| Stage | Goal |
+|-------|------|
+| Pre-training | Learn broad patterns from massive data |
+| Fine-tuning | Adapt the model to a narrower behavior or task |
+| Preference tuning / alignment | Make behavior more useful to people |
+
+## What To Remember
+
+- Pre-training is the broad learning stage, not the final product
+- It usually uses self-supervised objectives
+- Most modern AI systems start with a strong pre-trained base model

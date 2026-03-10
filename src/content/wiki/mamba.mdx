@@ -1,66 +1,77 @@
 ---
 title: "Mamba: State Space Models"
-description: "Linear-time sequence modeling as an efficient alternative to Transformers"
+description: "A sequence model that keeps a running state instead of attending to every token pair"
 date: 2026-02-01
 tags: ["deep-learning", "architecture", "sequence-modeling", "efficiency"]
 ---
 
 import { MambaViz } from '../../components/viz/MambaViz';
 
-**Mamba** is a state space model (SSM) architecture that achieves Transformer-quality performance with linear complexity in sequence length. It's emerging as a compelling alternative for long-context applications.
+**Mamba** is a sequence model designed for long contexts. Its selling point is efficiency: instead of comparing every token with every other token like a Transformer, it carries a learned internal state forward through the sequence.
 
-## The Transformer Bottleneck
+> If you are new to sequence models, start with [Understanding LSTMs](/understanding-lstms) and [Transformer](/transformer). Mamba is easier to understand if you already know both recurrence and attention.
 
-Self-attention has quadratic complexity:
+## The Intuition
+
+Imagine reading a long textbook chapter. A Transformer repeatedly looks back at many earlier words. Mamba tries a different strategy: keep a smart running summary of what matters, then update that summary as each new token arrives.
+
+That makes Mamba feel closer to an RNN in spirit, but with a more expressive update rule and much better engineering for modern hardware.
+
+## Why People Care
+
+Self-attention has quadratic cost in sequence length:
 
 $$
 O(n^2 \cdot d)
 $$
 
-For a 100k token sequence, this becomes prohibitively expensive. Mamba achieves:
+For very long sequences, that becomes expensive in memory and time. Mamba aims for:
 
 $$
 O(n \cdot d)
 $$
 
-## State Space Models
+That difference matters a lot for long documents, audio, DNA, or other very long sequences.
 
-SSMs model sequences through a continuous latent state:
+## What a State Space Model Does
+
+A **state space model (SSM)** keeps a hidden state that changes over time. You can think of it as a memory vector that gets updated every time a new token comes in.
+
+In continuous form:
 
 $$
 h'(t) = Ah(t) + Bx(t)
 $$
+
 $$
 y(t) = Ch(t)
 $$
 
-- $h(t) \in \mathbb{R}^N$: Hidden state
-- $A \in \mathbb{R}^{N \times N}$: State matrix
-- $B, C$: Input/output projections
+You do not need the control-theory background on first read. The useful mental model is:
 
-## Discretization
+- **state** = what the model is currently remembering
+- **input** = the new token
+- **output** = what the model produces from that memory
 
-For discrete sequences, we discretize with step size $\Delta$:
+## From Continuous Time to Tokens
 
-$$
-\bar{A} = \exp(\Delta A), \quad \bar{B} = (\Delta A)^{-1}(\exp(\Delta A) - I) \cdot \Delta B
-$$
-
-This gives the recurrence:
+Because text arrives token by token, the model uses a discrete recurrence:
 
 $$
 h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad y_t = C h_t
 $$
 
-## The Selective State Space
+This is the part that makes Mamba look like a learned memory-update system.
 
-Mamba's key innovation: **input-dependent parameters**:
+## The Key Innovation: Selectivity
+
+Classic SSMs use fixed dynamics. Mamba makes parts of the update depend on the current token:
 
 $$
 B_t = f_B(x_t), \quad C_t = f_C(x_t), \quad \Delta_t = f_\Delta(x_t)
 $$
 
-This allows the model to selectively propagate or forget information based on content—similar to gating in LSTMs.
+That means the model can decide, based on content, whether to keep information, forget it, or emphasize it. This is why people often describe Mamba as a **selective** state space model.
 
 ## Interactive Visualization
 
@@ -68,44 +79,40 @@ Compare Mamba's linear scaling with Transformer's quadratic growth:
 
 <MambaViz client:load />
 
-## Architecture
+## What a Mamba Block Contains
 
-A Mamba block contains:
-1. **Linear projection**: Expand input dimension
-2. **Convolution**: Local context mixing
-3. **SSM**: Selective state space layer
-4. **Gating**: Multiplicative interaction
-5. **Linear projection**: Back to model dimension
+At a high level, a block has:
 
-## Efficient Computation
+1. A projection to expand the representation
+2. A short convolution for local mixing
+3. The selective state space update
+4. A gating interaction
+5. A projection back to model size
 
-The recurrence can be computed in parallel via:
-- **Parallel scan**: $O(n)$ work, $O(\log n)$ depth
-- **Hardware-aware**: Fused CUDA kernels
+## When Mamba Helps
 
-## Performance Comparison
+Mamba is especially interesting when:
 
-| Model | Sequence Length | Memory | Throughput |
-|-------|-----------------|--------|------------|
-| Transformer | 2k optimal | $O(n^2)$ | Baseline |
-| Mamba | 1M+ possible | $O(n)$ | 3-5× faster |
+- sequences are very long
+- inference cost matters a lot
+- recurrence is acceptable if it is much more efficient
 
-## Key Properties
+## Trade-offs
 
-**Advantages:**
-- Linear-time inference
-- Constant memory per token in generation
-- Strong performance on long-range tasks
+| Strength | Limitation |
+|----------|------------|
+| Linear scaling in sequence length | Harder to interpret than plain recurrence |
+| Strong long-context efficiency | Smaller ecosystem than Transformers |
+| Useful hybrid building block | Attention still wins on some tasks |
 
-**Trade-offs:**
-- Less mature ecosystem than Transformers
-- Some tasks still favor attention
-- Hybrid architectures may be optimal
+## What To Remember
 
-## Applications
+- Mamba is a long-sequence alternative to attention-heavy models
+- It keeps a learned running state instead of attending to all pairs of tokens
+- Its main advantage is **efficiency at long context lengths**
 
-Mamba shows promise for:
-- Long-document understanding
-- Genomics and DNA modeling
-- Audio generation
-- Efficient edge deployment
+## Where To Go Next
+
+- Read [Transformer](/transformer) for the main comparison point
+- Read [Understanding LSTMs](/understanding-lstms) for the recurrence intuition
+- Read [Pre-training](/pre-training) to see how these models fit into foundation-model pipelines

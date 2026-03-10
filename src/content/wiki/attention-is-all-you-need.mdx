@@ -1,41 +1,45 @@
 ---
 title: "Attention Is All You Need"
-description: "The 2017 paper that introduced the Transformer architecture, replacing recurrence with self-attention"
+description: "The 2017 paper that introduced the Transformer architecture"
 date: 2026-02-26
 tags: ["paper", "architecture", "attention", "deep-learning", "nlp", "transformer"]
 ---
 
 import { AttentionPaperViz } from '../../components/viz/AttentionPaperViz';
 
-**Attention Is All You Need** (Vaswani et al., 2017) is arguably the most influential deep learning paper of the decade. It introduced the **Transformer**, an architecture built entirely on attention mechanisms, eliminating the recurrence and convolution that dominated sequence modeling.
+**Attention Is All You Need** is the 2017 paper that introduced the Transformer. If you want the general concept first, start with [Transformer](/transformer). This page focuses on **what the paper changed, why it mattered, and what results it achieved**.
 
-## The Problem
+> Before this paper, neural machine translation was dominated by recurrent models such as LSTMs and GRUs. The paper's big claim was that a sequence model could work using attention alone.
 
-Before Transformers, sequence-to-sequence models relied on RNNs (LSTMs, GRUs). These had fundamental limitations:
+## The Problem the Paper Solved
 
-- **Sequential computation**: position $t$ must wait for $t-1$, preventing parallelization
-- **Long-range dependencies**: information degrades over many steps despite gating mechanisms
-- **Training bottleneck**: O(n) sequential operations per layer
+Older sequence-to-sequence models had three recurring problems:
 
-The paper asked: *Can we build a sequence model using only attention?*
+- **They were slow to train** because tokens had to be processed one after another
+- **They struggled with long-range dependencies** because information had to travel through many recurrent steps
+- **They compressed the whole input too aggressively** in encoder-decoder setups
 
-## Core Innovation: Scaled Dot-Product Attention
+The paper asked: what if every token could directly look at every other token it needs?
 
-The fundamental operation of the Transformer:
+## The Core Innovation
+
+The main building block was **scaled dot-product attention**:
 
 $$
 \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
 
-where:
-- **Q** (Query): what each position is looking for
-- **K** (Key): what each position offers to match against
-- **V** (Value): the actual information to aggregate
-- **$\sqrt{d_k}$**: scaling factor to prevent softmax saturation
+In plain English:
+
+- compare each token's query to other tokens' keys
+- turn those scores into weights
+- use the weights to mix the values
+
+That gave the model a direct way to connect related words, even when they were far apart in the sentence.
 
 ## Multi-Head Attention
 
-Rather than a single attention function, the paper uses multiple parallel heads:
+Instead of learning one attention pattern, the paper learned several at once:
 
 $$
 \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h)W^O
@@ -45,11 +49,11 @@ $$
 \text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 $$
 
-Each head can learn different relational patterns—syntactic, semantic, positional—simultaneously.
+This let different heads focus on different relationships, such as grammar, word alignment, or longer-range context.
 
 ## Positional Encoding
 
-Since attention is permutation-invariant, position information is injected via sinusoidal encodings:
+Attention by itself does not encode order, so the paper added sinusoidal positional encodings:
 
 $$
 PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
@@ -59,7 +63,7 @@ $$
 PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
 $$
 
-The authors chose sinusoidal functions because they hypothesized the model could learn to attend by relative position, since $PE_{pos+k}$ can be represented as a linear function of $PE_{pos}$.
+You can think of these as extra signals that tell the model where each token appears in the sequence.
 
 ## Interactive Demo
 
@@ -67,34 +71,22 @@ Explore scaled dot-product attention, multi-head patterns, positional encodings,
 
 <AttentionPaperViz client:load />
 
-## The Architecture
+## The Architecture in Words
 
-The Transformer follows an encoder-decoder structure:
+The paper used an **encoder-decoder** Transformer:
 
-**Encoder** (6 identical layers):
+**Encoder**:
 1. Multi-head self-attention
-2. Add & layer norm (residual connection)
-3. Position-wise feed-forward network (two linear layers, ReLU)
-4. Add & layer norm
+2. Residual connection + layer normalization
+3. Feed-forward network
+4. Another residual connection + layer normalization
 
-**Decoder** (6 identical layers):
-1. Masked multi-head self-attention (causal: prevent attending to future positions)
-2. Add & norm
-3. Multi-head cross-attention (queries from decoder, keys/values from encoder)
-4. Add & norm
-5. Feed-forward network
-6. Add & norm
+**Decoder**:
+1. Masked self-attention so future tokens stay hidden
+2. Cross-attention to the encoder outputs
+3. Feed-forward network
 
-## Key Hyperparameters
-
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| $N$ | 6 | Encoder/decoder layers |
-| $d_{\text{model}}$ | 512 | Embedding dimension |
-| $h$ | 8 | Attention heads |
-| $d_k = d_v$ | 64 | Per-head dimension ($d_{\text{model}} / h$) |
-| $d_{ff}$ | 2048 | Feed-forward inner dimension |
-| Dropout | 0.1 | Applied throughout |
+The original model used 6 encoder layers, 6 decoder layers, model width 512, and 8 heads.
 
 ## Why It Worked
 
@@ -102,36 +94,43 @@ The Transformer follows an encoder-decoder structure:
 |----------|-----|-------------|
 | Sequential ops per layer | O(n) | O(1) |
 | Maximum path length | O(n) | O(1) |
-| Computation per layer | O(n·d²) | O(n²·d) |
 | Parallelizable | No | Yes |
 
-For typical sequence lengths where $n < d$, the self-attention layer is faster than recurrent layers. The O(1) maximum path length means any two positions can interact directly, solving the long-range dependency problem.
+Two practical consequences mattered:
+
+- training became much more parallel
+- any two positions could interact in one step instead of many
 
 ## Results from the Paper
 
-The Transformer achieved state-of-the-art on English-to-German and English-to-French translation:
+The paper reached state-of-the-art machine translation results:
 
-- **EN-DE**: 28.4 BLEU (surpassing all previous ensembles)
-- **EN-FR**: 41.0 BLEU (new single-model SOTA)
-- **Training cost**: 3.5 days on 8 P100 GPUs (fraction of competing models)
+- **EN-DE**: 28.4 BLEU
+- **EN-FR**: 41.0 BLEU
+- **Training time**: about 3.5 days on 8 P100 GPUs
+
+For students, the exact numbers matter less than the message: **this was not just a neat idea; it won on real benchmarks**.
 
 ## Legacy
 
-This single paper spawned the entire modern AI landscape:
+This paper directly led to:
 
-- **BERT** (2018): encoder-only Transformer for understanding
-- **GPT series** (2018–): decoder-only Transformer for generation
-- **T5, BART** (2019): encoder-decoder variants
-- **Vision Transformer** (2020): applied to images
-- **Modern LLMs** (GPT-4, Claude, Gemini): scaled Transformers with trillions of tokens
+- [BERT](/bert) for bidirectional language understanding
+- [GPT](/gpt) for autoregressive text generation
+- [Vision Transformer](/vision-transformer) for images
+- modern LLMs built on scaled Transformer variants
 
-The title proved prophetic—attention really was all you need.
+## What To Remember
+
+- The paper introduced the Transformer
+- The key mechanism was self-attention
+- The breakthrough was both conceptual and practical: better long-range modeling and much better parallelism
 
 ## Key Papers
 
-- **Attention Is All You Need** – Vaswani et al., 2017  \
+- **Attention Is All You Need** - Vaswani et al., 2017  \
   https://arxiv.org/abs/1706.03762
-- **Neural Machine Translation by Jointly Learning to Align and Translate** – Bahdanau et al., 2014  \
+- **Neural Machine Translation by Jointly Learning to Align and Translate** - Bahdanau et al., 2014  \
   https://arxiv.org/abs/1409.0473
-- **The Annotated Transformer** – Rush, 2018  \
+- **The Annotated Transformer** - Rush, 2018  \
   https://nlp.seas.harvard.edu/annotated-transformer/
