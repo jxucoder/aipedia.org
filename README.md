@@ -22,6 +22,7 @@ Visit `http://localhost:4321`
 - **Tailwind CSS** - Styling
 - **Framer Motion** - Animations
 - **Recharts** - Charts
+- **KaTeX** - Math typesetting (self-hosted)
 
 ## Structure
 
@@ -30,8 +31,12 @@ src/
 ├── content/wiki/     # MDX articles
 ├── components/viz/   # Interactive visualizations
 ├── layouts/          # Page templates
-└── pages/            # Routes
+├── lib/              # Search ranking, seeded RNG, motion preferences
+├── scripts/          # Client-side behaviour (search)
+└── pages/            # Routes, plus rss.xml / robots.txt / search-index.json
 ```
+
+See `AGENTS.md` for the conventions this codebase relies on.
 
 ## License
 

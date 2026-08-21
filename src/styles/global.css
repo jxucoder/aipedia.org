@@ -1,3 +1,11 @@
+/* Self-hosted so a CDN outage can't leave math unstyled — without katex.css the
+   radical SVGs expand unbounded and blow the page out to several thousand
+   pixels wide. */
+@import 'katex/dist/katex.min.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,8 +14,9 @@
   --color-bg: 255 255 255;
   --color-bg-secondary: 245 245 245;
   --color-text: 23 23 23;
-  --color-text-secondary: 115 115 115;
+  --color-text-secondary: 105 105 105;
   --color-border: 229 229 229;
+  --color-border-strong: 140 140 140;
   --color-accent: 23 23 23;
   --color-accent-hover: 64 64 64;
 }
@@ -16,20 +25,25 @@
   --color-bg: 18 18 18;
   --color-bg-secondary: 28 28 28;
   --color-text: 250 250 250;
-  --color-text-secondary: 115 115 115;
+  /* 5.1:1 against bg-secondary — the old value was 3.6:1 and failed AA on every
+     article description and date on the site. */
+  --color-text-secondary: 140 140 140;
   --color-border: 38 38 38;
+  --color-border-strong: 115 115 115;
   --color-accent: 250 250 250;
   --color-accent-hover: 200 200 200;
 }
 
 html {
   scroll-behavior: smooth;
+  /* keep headings clear of the sticky header when jumped to from the contents */
+  scroll-padding-top: 5rem;
 }
 
 body {
   background-color: rgb(var(--color-bg));
   color: rgb(var(--color-text));
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter Variable', Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
@@ -58,8 +72,25 @@ body {
 }
 
 :focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgb(var(--color-text) / 0.3);
+  outline: 2px solid rgb(var(--color-text));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgb(var(--color-bg));
+  border: 1px solid rgb(var(--color-border-strong));
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }
 
 pre {
@@ -73,4 +104,55 @@ pre {
 code {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.875rem;
+  /* long identifiers in prose used to push the page sideways on phones */
+  overflow-wrap: anywhere;
+}
+
+pre code {
+  overflow-wrap: normal;
+}
+
+/* Wide display equations scroll inside their own box rather than widening the
+   page. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25rem;
+}
+
+/* Paper URLs in the reference lists are a single unbreakable token and used to
+   push the article sideways on phones. */
+.prose a {
+  overflow-wrap: anywhere;
+}
+
+/* Several visualizations lay out fixed-width grids that are wider than a phone
+   screen. Let the visualization scroll rather than the page. */
+.prose astro-island {
+  display: block;
+  overflow-x: auto;
+}
+
+/* Comparison tables have more columns than a phone can show. Scrolling the
+   table beats scrolling the article. */
+.prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
