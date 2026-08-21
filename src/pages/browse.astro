@@ -2,54 +2,86 @@
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
-const pages = await getCollection('wiki');
-const allTags = [...new Set(pages.flatMap(p => p.data.tags))].sort();
+const pages = await getCollection('wiki', ({ data }) => !data.draft);
+const sorted = [...pages].sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+const tagCounts = new Map<string, number>();
+for (const page of pages) {
+  for (const tag of page.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+}
+const topTags = [...tagCounts.entries()]
+  .filter(([, count]) => count > 2)
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+// Group alphabetically so a 58-entry list is scannable instead of one long run.
+const groups = new Map<string, typeof sorted>();
+for (const page of sorted) {
+  const letter = page.data.title[0].toUpperCase();
+  const key = /[A-Z]/.test(letter) ? letter : '#';
+  groups.set(key, [...(groups.get(key) ?? []), page]);
+}
 ---
 
-<Base title="Browse">
-  <div class="max-w-2xl mx-auto px-4 py-12">
+<Base title="Topics" description={`All ${pages.length} AIpedia articles, grouped alphabetically.`}>
+  <div class="max-w-5xl mx-auto px-4 py-12">
     <header class="mb-10">
-      <h1 class="text-3xl font-semibold mb-3">Topics</h1>
+      <h1 class="text-3xl font-semibold tracking-tight mb-3">Topics</h1>
       <p class="text-text-secondary">
-        {pages.length} articles across {allTags.length} tags
+        {pages.length} articles across {tagCounts.size} tags. Press <kbd
+          class="font-mono text-[11px] px-1.5 py-0.5 rounded border border-border bg-bg-secondary">⌘K</kbd
+        > to search.
       </p>
     </header>
-    
+
     <section class="mb-12">
-      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">
-        Tags
-      </h2>
-      <div class="flex flex-wrap gap-2">
-        {allTags.map(tag => (
+      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">Main tags</h2>
+      <ul class="flex flex-wrap gap-2">
+        {
+          topTags.map(([tag, count]) => (
+            <li>
+              <a
+                href={`/tags/${tag}`}
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-bg-secondary border border-border hover:border-border-strong transition-colors"
+              >
+                {tag}
+                <span class="text-xs text-text-secondary tabular-nums">{count}</span>
+              </a>
+            </li>
+          ))
+        }
+        <li>
           <a
-            href={`/tags/${tag}`}
-            class="px-3 py-1.5 text-sm rounded-lg bg-bg-secondary hover:bg-border transition-colors border border-border"
+            href="/tags"
+            class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-transparent text-text-secondary hover:text-text transition-colors"
           >
-            {tag}
+            All tags →
           </a>
-        ))}
-      </div>
+        </li>
+      </ul>
     </section>
-    
+
     <section>
-      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">
-        All Articles
-      </h2>
-      <div class="divide-y divide-border">
-        {pages.map(page => (
-          <a
-            href={`/${page.slug}`}
-            class="group block py-4 hover:bg-bg-secondary/30 -mx-4 px-4 transition-colors"
-          >
-            <div class="font-medium group-hover:underline mb-1">
-              {page.data.title}
-            </div>
-            <div class="text-sm text-text-secondary">
-              {page.data.description}
-            </div>
-          </a>
-        ))}
-      </div>
+      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">All articles</h2>
+      {
+        [...groups.entries()].map(([letter, items]) => (
+          <div class="mb-8">
+            <h3 class="text-sm font-semibold text-text-secondary mb-2 pb-2 border-b border-border">{letter}</h3>
+            <ul class="grid sm:grid-cols-2 gap-x-8">
+              {items.map(page => (
+                <li class="border-b border-border sm:border-b-0">
+                  <a
+                    href={`/${page.slug}`}
+                    class="group block py-3 -mx-2 px-2 rounded-lg hover:bg-bg-secondary/50 transition-colors"
+                  >
+                    <span class="block font-medium group-hover:underline">{page.data.title}</span>
+                    <span class="block text-sm text-text-secondary mt-0.5">{page.data.description}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
     </section>
   </div>
 </Base>

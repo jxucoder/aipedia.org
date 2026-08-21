@@ -1,5 +1,7 @@
 ---
+import type { MarkdownHeading } from 'astro';
 import Base from './Base.astro';
+import TableOfContents from '../components/TableOfContents.astro';
 import { getCollection } from 'astro:content';
 
 interface Props {
@@ -7,107 +9,117 @@ interface Props {
   description: string;
   tags: string[];
   slug: string;
+  date?: Date;
+  headings: MarkdownHeading[];
 }
 
-const { title, description, tags, slug } = Astro.props;
+const { title, description, tags, slug, date, headings } = Astro.props;
 
-// Get related pages (pages sharing at least one tag)
+const editUrl = `https://github.com/jxucoder/aipedia.org/edit/main/src/content/wiki/${slug}.mdx`;
+
+// Related pages, most-shared-tags first, so a page with three tags in common
+// outranks one that merely shares "deep-learning" with everything else.
 const allPages = await getCollection('wiki');
 const relatedPages = allPages
   .filter(page => page.slug !== slug)
-  .filter(page => page.data.tags.some(t => tags.includes(t)))
-  .slice(0, 5);
+  .map(page => ({ page, overlap: page.data.tags.filter(tag => tags.includes(tag)).length }))
+  .filter(entry => entry.overlap > 0)
+  .sort((a, b) => b.overlap - a.overlap || a.page.data.title.localeCompare(b.page.data.title))
+  .slice(0, 5)
+  .map(entry => entry.page);
+
+const formatDate = (value: Date) =>
+  value.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 ---
 
-<Base title={title} description={description}>
-  <article class="max-w-4xl mx-auto px-4 py-12">
-    <!-- Breadcrumb-style back link -->
-    <div class="mb-8">
-      <a 
-        href="/" 
-        class="inline-flex items-center text-sm text-text-secondary hover:text-text transition-colors"
-      >
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to Home
-      </a>
-    </div>
+<Base title={title} description={description} type="article" publishedTime={date}>
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    <nav aria-label="Breadcrumb" class="mb-8 text-sm">
+      <ol class="flex items-center gap-2 text-text-secondary">
+        <li><a href="/" class="hover:text-text transition-colors">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/browse" class="hover:text-text transition-colors">Topics</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-text truncate" aria-current="page">{title}</li>
+      </ol>
+    </nav>
 
-    <header class="mb-8">
-      <div class="flex items-start justify-between gap-4 mb-4">
-        <h1 class="text-4xl font-bold">{title}</h1>
-        <div class="flex items-center gap-2">
+    <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_14rem] xl:gap-12">
+      <article>
+        <header class="mb-10">
+          <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-balance">{title}</h1>
+          <p class="text-text-secondary text-lg mt-3 max-w-[60ch]">{description}</p>
+          <div class="flex flex-wrap items-center gap-2 mt-5">
+            {
+              tags.map(tag => (
+                <a
+                  href={`/tags/${tag}`}
+                  class="px-3 py-1 text-sm rounded-full bg-bg-secondary border border-border text-text-secondary hover:text-text hover:border-border-strong transition-colors"
+                >
+                  {tag}
+                </a>
+              ))
+            }
+          </div>
+          {
+            date && (
+              <p class="mt-4 text-sm text-text-secondary">
+                Updated <time datetime={date.toISOString()}>{formatDate(date)}</time>
+              </p>
+            )
+          }
+        </header>
+
+        <TableOfContents headings={headings} variant="mobile" />
+
+        <div class="prose prose-lg dark:prose-invert prose-headings:scroll-mt-24">
+          <slot />
+        </div>
+
+        {
+          relatedPages.length > 0 && (
+            <aside class="mt-16 pt-8 border-t border-border">
+              <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">Related pages</h2>
+              <ul class="grid sm:grid-cols-2 gap-3">
+                {relatedPages.map(page => (
+                  <li>
+                    <a
+                      href={`/${page.slug}`}
+                      class="group block h-full p-4 rounded-xl border border-border hover:border-border-strong bg-bg-secondary/40 transition-colors"
+                    >
+                      <span class="block font-medium group-hover:underline">{page.data.title}</span>
+                      <span class="block text-sm text-text-secondary mt-1">{page.data.description}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          )
+        }
+
+        <div
+          class="mt-10 pt-6 border-t border-border flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary"
+        >
+          <span>Found an error or want to contribute?</span>
           <a
-            href="/"
-            class="flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-border bg-bg-secondary hover:bg-bg-secondary/80 text-text-secondary hover:text-text transition-colors"
-            title="Go back"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back
-          </a>
-          <a
-            href={`https://github.com/jxucoder/aipedia.org/edit/main/src/content/wiki/${slug}.mdx`}
+            href={editUrl}
             target="_blank"
             rel="noopener noreferrer"
-            class="flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-border bg-bg-secondary hover:bg-accent/10 hover:border-accent/50 hover:text-accent transition-colors"
-            title="Edit this page on GitHub"
+            class="inline-flex items-center gap-1.5 hover:text-text transition-colors"
           >
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+              ></path>
             </svg>
-            Edit
+            Edit this page on GitHub
           </a>
         </div>
+      </article>
+
+      <div class="hidden xl:block">
+        <TableOfContents headings={headings} variant="desktop" />
       </div>
-      <p class="text-text-secondary text-lg mb-4">{description}</p>
-      <div class="flex flex-wrap gap-2">
-        {tags.map(tag => (
-          <a
-            href={`/tags/${tag}`}
-            class="px-3 py-1 text-sm rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
-          >
-            {tag}
-          </a>
-        ))}
-      </div>
-    </header>
-    
-    <div class="prose prose-lg dark:prose-invert max-w-none">
-      <slot />
     </div>
-    
-    {relatedPages.length > 0 && (
-      <aside class="mt-16 pt-8 border-t border-border">
-        <h2 class="text-lg font-semibold mb-4 text-text-secondary">Related Pages</h2>
-        <div class="flex flex-wrap gap-3">
-          {relatedPages.map(page => (
-            <a
-              href={`/${page.slug}`}
-              class="px-4 py-2 rounded-lg bg-bg-secondary hover:bg-accent/10 hover:text-accent transition-colors"
-            >
-              {page.data.title}
-            </a>
-          ))}
-        </div>
-      </aside>
-    )}
-    
-    <div class="mt-8 pt-8 border-t border-border flex items-center justify-between text-sm text-text-secondary">
-      <span>Found an error or want to contribute?</span>
-      <a
-        href={`https://github.com/jxucoder/aipedia.org/edit/main/src/content/wiki/${slug}.mdx`}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="hover:text-accent inline-flex items-center gap-1.5 transition-colors"
-      >
-        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-        </svg>
-        Edit on GitHub
-      </a>
-    </div>
-  </article>
+  </div>
 </Base>

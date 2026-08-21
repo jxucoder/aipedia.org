@@ -2,32 +2,62 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
-const pages = await getCollection('wiki');
-const tagCounts = pages.reduce((acc, page) => {
-  page.data.tags.forEach(tag => {
-    acc[tag] = (acc[tag] || 0) + 1;
-  });
-  return acc;
-}, {} as Record<string, number>);
+const pages = await getCollection('wiki', ({ data }) => !data.draft);
 
-const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+const tagCounts = new Map<string, number>();
+for (const page of pages) {
+  for (const tag of page.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+}
+
+const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+// Two thirds of the tags are used exactly once. Splitting them out keeps the
+// index from reading as one undifferentiated cloud.
+const mainTags = sortedTags.filter(([, count]) => count > 1);
+const singleUseTags = sortedTags.filter(([, count]) => count === 1).sort((a, b) => a[0].localeCompare(b[0]));
 ---
 
-<Base title="Tags">
-  <div class="max-w-4xl mx-auto px-4 py-12">
-    <h1 class="text-4xl font-bold mb-8">Tags</h1>
-    <div class="flex flex-wrap gap-3">
-      {sortedTags.map(([tag, count]) => (
-        <a
-          href={`/tags/${tag}`}
-          class="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:border-accent/50 hover:bg-bg-secondary transition-all"
-        >
-          <span class="group-hover:text-accent transition-colors">{tag}</span>
-          <span class="text-xs text-text-secondary bg-bg-secondary group-hover:bg-bg px-2 py-0.5 rounded-full">
-            {count}
-          </span>
-        </a>
-      ))}
-    </div>
+<Base title="Tags" description="Browse AIpedia articles by tag.">
+  <div class="max-w-5xl mx-auto px-4 py-12">
+    <header class="mb-10">
+      <h1 class="text-3xl font-semibold tracking-tight mb-3">Tags</h1>
+      <p class="text-text-secondary">{tagCounts.size} tags across {pages.length} articles</p>
+    </header>
+
+    <section class="mb-12">
+      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">Shared across articles</h2>
+      <ul class="flex flex-wrap gap-3">
+        {
+          mainTags.map(([tag, count]) => (
+            <li>
+              <a
+                href={`/tags/${tag}`}
+                class="group flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:border-border-strong hover:bg-bg-secondary transition-colors"
+              >
+                <span>{tag}</span>
+                <span class="text-xs text-text-secondary tabular-nums">{count}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-xs font-medium text-text-secondary mb-4 uppercase tracking-widest">
+        Used by a single article
+      </h2>
+      <ul class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+        {
+          singleUseTags.map(([tag]) => (
+            <li>
+              <a href={`/tags/${tag}`} class="text-text-secondary hover:text-text transition-colors">
+                {tag}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
   </div>
 </Base>
